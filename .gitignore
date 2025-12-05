@@ -1,0 +1,45 @@
+# Binaries
+/sosomi
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+dist/
+*.o
+*.a
+
+# Test coverage
+coverage.out
+coverage.html
+*.test
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencies
+vendor/
+
+# Config files with secrets
+config.yaml
+*.local.yaml
+
+# Database files
+*.db
+*.db-journal
+
+# Backup files
+backups/
+
+# Log files
+*.log
+
+# Temporary files
+tmp/
+*.tmp

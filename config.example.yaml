@@ -1,0 +1,211 @@
+# Sosomi Configuration Example
+# Copy this to ~/.config/sosomi/config.yaml
+#
+# Configuration follows a layered approach:
+# 1. System config: /etc/sosomi/config.yaml (lowest priority)
+# 2. User config: ~/.config/sosomi/config.yaml
+# 3. Project config: ./.sosomi/config.yaml (in current directory)
+# 4. Profile: ~/.config/sosomi/profiles/<name>.yaml
+# 5. Environment variables: SOSOMI_* (highest priority)
+
+# Config version (for migration support)
+version: 1
+
+# Default profile to use (optional)
+# default_profile: work
+
+# ============================================
+# Provider Configuration
+# ============================================
+provider:
+  # Supported: openai, ollama, lmstudio, llamacpp, generic
+  name: openai
+  
+  # API endpoint
+  endpoint: https://api.openai.com/v1
+  
+  # API key configuration (choose one method):
+  #
+  # Option 1: Environment variable (recommended)
+  api_key_env: OPENAI_API_KEY
+  #
+  # Option 2: Command to retrieve key (e.g., from password manager)
+  # api_key_cmd: "op read 'OpenAI API Key'"
+  #
+  # Option 3: Direct key (NOT recommended - use only for testing)
+  # api_key: "sk-..."
+
+# ============================================
+# Model Configuration
+# ============================================
+model:
+  # Model name
+  # OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
+  # Ollama: llama3.2, codellama, mistral, deepseek-coder-v2
+  # LM Studio/llama.cpp: whatever model is loaded
+  name: gpt-4o
+  
+  # Response limits
+  max_tokens: 2048
+  
+  # Temperature (0.0 = deterministic, 1.0 = creative)
+  temperature: 0.1
+  
+  # Nucleus sampling
+  top_p: 1.0
+  
+  # Request timeout
+  timeout_seconds: 30
+  
+  # Retry attempts on failure
+  max_retries: 3
+  
+  # Stream response output
+  stream_output: true
+
+# ============================================
+# Safety Configuration
+# ============================================
+safety:
+  # Safety level: strict, cautious, moderate, normal, relaxed
+  # - strict: maximum safety, confirms everything
+  # - cautious: high safety, most commands need confirmation
+  # - moderate: balanced (default)
+  # - normal: standard safety
+  # - relaxed: minimal restrictions
+  level: moderate
+  
+  # Always require confirmation before execution
+  require_confirmation: true
+  
+  # Auto-execute commands with SAFE risk level
+  auto_execute_safe: false
+  
+  # Risk level that triggers confirmation
+  # confirm_threshold: caution
+  
+  # Start in dry-run mode by default
+  # dry_run_default: false
+  
+  # Maximum files that can be affected by a single command
+  # max_affected_files: 100
+  
+  # Commands that are always blocked (even with --force)
+  blocked_commands:
+    - shutdown
+    - reboot
+    - init 0
+    - init 6
+    - ":(){ :|:& };:"  # fork bomb
+  
+  # Protected paths (operations here are extra cautious)
+  protected_paths:
+    - /
+    - /etc
+    - /usr
+    - /bin
+    - /sbin
+    - /boot
+  
+  # Restrict operations to these paths only (empty = allow all)
+  # allowed_paths:
+  #   - /home/user/projects
+  #   - /tmp
+  
+  # Custom safety rules file
+  # custom_rules_path: ~/.config/sosomi/safety_rules.yaml
+
+# ============================================
+# Backup Configuration
+# ============================================
+backup:
+  # Enable automatic backups before risky operations
+  enabled: true
+  
+  # Backup storage directory
+  dir: ~/.local/share/sosomi/backups
+  
+  # Days to keep backups
+  retention_days: 7
+  
+  # Maximum total backup size in MB
+  max_size_mb: 500
+  
+  # Patterns to exclude from backups
+  exclude:
+    - node_modules
+    - .git
+    - __pycache__
+    - "*.log"
+    - .DS_Store
+    - venv
+    - .venv
+
+# ============================================
+# History Configuration
+# ============================================
+history:
+  # Enable command history
+  enabled: true
+  
+  # History database location
+  db_path: ~/.local/share/sosomi/history.db
+  
+  # Days to keep history
+  retention_days: 30
+
+# ============================================
+# MCP (Model Context Protocol) Configuration
+# ============================================
+mcp:
+  # Enable MCP support
+  enabled: true
+  
+  # MCP server commands (list of server command strings)
+  servers: []
+  
+  # Directory for MCP tools
+  tools_dir: ~/.config/sosomi/mcp_tools
+
+# ============================================
+# UI Configuration
+# ============================================
+ui:
+  # Enable colored output
+  color_enabled: true
+  
+  # Show command explanations
+  show_explanations: true
+  
+  # Show execution timing
+  show_timings: true
+  
+  # Compact output mode
+  compact_mode: false
+  
+  # UI language
+  language: en
+
+# ============================================
+# Shell Configuration
+# ============================================
+shell:
+  # Override default shell (empty = detect from environment)
+  # default_shell: /bin/zsh
+  
+  # Shell arguments
+  # shell_args: ["-c"]
+  
+  # Capture command output
+  capture_output: true
+  
+  # Maximum output lines to display
+  output_max_lines: 100
+
+# ============================================
+# Command Aliases
+# ============================================
+# aliases:
+#   ll: "ls -la"
+#   gs: "git status"
+#   gd: "git diff"
