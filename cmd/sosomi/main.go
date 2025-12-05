@@ -1780,11 +1780,13 @@ In-conversation commands:
 
 #### sosomi profile
   sosomi profile list          List profiles
-  sosomi profile create <n>    Create new profile
-  sosomi profile switch <n>    Switch to profile
+  sosomi profile create        Create new profile interactively
+  sosomi profile use <n>       Set profile as default
+  sosomi profile show <n>      Show profile details
+  sosomi profile test <n>      Test profile connectivity
   sosomi profile delete <n>    Delete profile
-  sosomi profile export <n> <f> Export profile
-  sosomi profile import <f>    Import profile
+  sosomi profile export <n>    Export profile (without secrets)
+  sosomi profile import <f>    Import profile from file
 
 #### sosomi init
 Interactive setup wizard for first-time configuration
