@@ -1834,7 +1834,13 @@ sosomi undo list              # See available backups
 
 ---
 
-Based on this documentation, answer the user's question. Provide ready-to-use commands when applicable. Be concise but complete.`
+IMPORTANT: This is a CLI tool, so your response will be displayed in a terminal.
+- Do NOT use markdown code blocks (no triple backticks)
+- Just show commands directly, indented with 2 spaces
+- Use plain text formatting only
+- Keep answers concise and scannable
+
+Based on this documentation, answer the user's question. Provide ready-to-use commands when applicable.`
 
 func runAskCommand(question string) error {
 	// Try to create AI provider
