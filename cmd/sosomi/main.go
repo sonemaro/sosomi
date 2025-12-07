@@ -805,10 +805,14 @@ func runChat(sessName, continueID string) error {
 
 	// Setup liner for readline with history
 	line := liner.NewLiner()
-	defer line.Close()
+	defer func() {
+		if line != nil {
+			line.Close()
+		}
+	}()
 
 	line.SetCtrlCAborts(true)
-	
+
 	// Set terminal mode to support editing
 	line.SetCompleter(nil) // No tab completion for now
 
@@ -881,6 +885,8 @@ func runChat(sessName, continueID string) error {
 		case input == "/pick":
 			// Switch to another session
 			sessions, _ := sessStore.ListSessions(100, 0)
+			// Close liner before SessionPicker (which uses bubbletea and takes over terminal)
+			line.Close()
 			selected, createNew, _ := ui.SessionPicker(sessions, 10)
 			fmt.Print("\033[2J\033[H")
 			if createNew {
@@ -888,6 +894,17 @@ func runChat(sessName, continueID string) error {
 			}
 			if selected != nil {
 				return runChat("", selected.ID)
+			}
+			// Recreate liner after picker
+			line = liner.NewLiner()
+			line.SetCtrlCAborts(true)
+			line.SetCompleter(nil)
+			// Reload history
+			storedMsgs, _ = sessStore.GetMessages(sess.ID)
+			for _, msg := range storedMsgs {
+				if msg.Role == "user" && msg.Content != "" && !strings.HasPrefix(msg.Content, "/") {
+					line.AppendHistory(msg.Content)
+				}
 			}
 			continue
 		case input == "/new":
@@ -971,6 +988,9 @@ func runChat(sessName, continueID string) error {
 		if response.Len() == 0 {
 			continue
 		}
+
+		// Ensure output is flushed
+		os.Stdout.Sync()
 
 		assistantContent := response.String()
 		contextMsgs = append(contextMsgs, ai.Message{Role: "assistant", Content: assistantContent})
