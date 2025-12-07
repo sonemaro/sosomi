@@ -224,6 +224,7 @@ type Session struct {
 	MessageCount int       `json:"message_count"`
 	CommandCount int       `json:"command_count"`
 	LastCwd      string    `json:"last_cwd"`
+	AutoExecute  bool      `json:"auto_execute"` // Per-session auto-execute override
 }
 
 // SessionMessage represents a message in a shell session

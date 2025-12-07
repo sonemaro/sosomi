@@ -861,6 +861,38 @@ func runChat(sessName, continueID string) error {
 			sess, _ = sessStore.GetSession(sess.ID)
 			fmt.Printf("💰 Tokens used: %d\n", sess.TotalTokens)
 			continue
+		case input == "/auto":
+			// Show current auto-execute state
+			var err error
+			sess, err = sessStore.GetSession(sess.ID)
+			if err != nil {
+				ui.PrintError("Failed to get session info")
+				continue
+			}
+			status := "OFF"
+			if sess.AutoExecute {
+				status = "ON"
+			}
+			fmt.Printf("🤖 Auto-execute: %s\n", ui.Bold(status))
+			continue
+		case input == "/auto on":
+			// Enable auto-execute for this session
+			if err := sessStore.UpdateAutoExecute(sess.ID, true); err != nil {
+				ui.PrintError("Failed to enable auto-execute")
+				continue
+			}
+			sess.AutoExecute = true
+			fmt.Printf("✓ Auto-execute %s for this session\n", ui.Success("enabled"))
+			continue
+		case input == "/auto off":
+			// Disable auto-execute for this session
+			if err := sessStore.UpdateAutoExecute(sess.ID, false); err != nil {
+				ui.PrintError("Failed to disable auto-execute")
+				continue
+			}
+			sess.AutoExecute = false
+			fmt.Printf("✓ Auto-execute %s for this session\n", ui.Dim("disabled"))
+			continue
 		case strings.HasPrefix(input, "/"):
 			fmt.Printf("Unknown command: %s. Type /help for available commands.\n", input)
 			continue
@@ -953,8 +985,8 @@ func runChat(sessName, continueID string) error {
 			continue
 		}
 
-		// Auto-execute safe commands if configured
-		autoExec := cfg.Safety.AutoExecuteSafe && analysis.RiskLevel == types.RiskSafe
+		// Auto-execute safe commands based on session setting or global config
+		autoExec := (sess.AutoExecute || cfg.Safety.AutoExecuteSafe) && analysis.RiskLevel == types.RiskSafe
 
 		var confirmed bool
 		if autoExec {
@@ -1272,6 +1304,9 @@ func printChatHelp() {
   /info          Show session info
   /history       Show session history
   /tokens        Show token usage
+  /auto          Show auto-execute status
+  /auto on       Enable auto-execute for safe commands
+  /auto off      Disable auto-execute
   /pick          Switch to another session
   /new           Start a new session
   /clear         Clear screen

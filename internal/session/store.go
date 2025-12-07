@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,7 +46,8 @@ func (s *Store) initialize() error {
 		total_tokens INTEGER DEFAULT 0,
 		message_count INTEGER DEFAULT 0,
 		command_count INTEGER DEFAULT 0,
-		last_cwd TEXT
+		last_cwd TEXT,
+		auto_execute INTEGER DEFAULT 0
 	);
 
 	CREATE TABLE IF NOT EXISTS session_messages (
@@ -66,8 +68,17 @@ func (s *Store) initialize() error {
 	CREATE INDEX IF NOT EXISTS idx_sessions_updated ON sessions(updated_at);
 	CREATE INDEX IF NOT EXISTS idx_session_messages_session ON session_messages(session_id);
 	`
-	_, err := s.db.Exec(schema)
-	return err
+	if _, err := s.db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Migration: Add auto_execute column if it doesn't exist
+	_, err := s.db.Exec(`ALTER TABLE sessions ADD COLUMN auto_execute INTEGER DEFAULT 0`)
+	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		// Ignore error if column already exists, but log others
+	}
+
+	return nil
 }
 
 // CreateSession creates a new session
@@ -96,14 +107,14 @@ func (s *Store) CreateSession(name, provider, model, cwd string) (*types.Session
 // GetSession retrieves a session by ID (supports partial ID match)
 func (s *Store) GetSession(id string) (*types.Session, error) {
 	row := s.db.QueryRow(`
-		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd
+		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd, auto_execute
 		FROM sessions WHERE id = ? OR id LIKE ?
 	`, id, id+"%")
 
 	sess := &types.Session{}
 	var lastCwd sql.NullString
 	err := row.Scan(&sess.ID, &sess.Name, &sess.CreatedAt, &sess.UpdatedAt, &sess.Provider, &sess.Model,
-		&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd)
+		&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd, &sess.AutoExecute)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("session not found: %s", id)
@@ -119,14 +130,14 @@ func (s *Store) GetSession(id string) (*types.Session, error) {
 // GetSessionByName retrieves a session by name (partial match)
 func (s *Store) GetSessionByName(name string) (*types.Session, error) {
 	row := s.db.QueryRow(`
-		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd
+		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd, auto_execute
 		FROM sessions WHERE name LIKE ? ORDER BY updated_at DESC LIMIT 1
 	`, "%"+name+"%")
 
 	sess := &types.Session{}
 	var lastCwd sql.NullString
 	err := row.Scan(&sess.ID, &sess.Name, &sess.CreatedAt, &sess.UpdatedAt, &sess.Provider, &sess.Model,
-		&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd)
+		&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd, &sess.AutoExecute)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("session not found: %s", name)
@@ -145,7 +156,7 @@ func (s *Store) ListSessions(limit, offset int) ([]*types.Session, error) {
 		limit = 100
 	}
 	rows, err := s.db.Query(`
-		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd
+		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd, auto_execute
 		FROM sessions ORDER BY updated_at DESC LIMIT ? OFFSET ?
 	`, limit, offset)
 	if err != nil {
@@ -158,7 +169,7 @@ func (s *Store) ListSessions(limit, offset int) ([]*types.Session, error) {
 		sess := &types.Session{}
 		var lastCwd sql.NullString
 		if err := rows.Scan(&sess.ID, &sess.Name, &sess.CreatedAt, &sess.UpdatedAt, &sess.Provider, &sess.Model,
-			&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd); err != nil {
+			&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd, &sess.AutoExecute); err != nil {
 			return nil, err
 		}
 		if lastCwd.Valid {
@@ -283,6 +294,12 @@ func (s *Store) UpdateLastCwd(sessionID, cwd string) error {
 	return err
 }
 
+// UpdateAutoExecute updates the auto-execute setting for a session
+func (s *Store) UpdateAutoExecute(sessionID string, autoExecute bool) error {
+	_, err := s.db.Exec(`UPDATE sessions SET auto_execute = ?, updated_at = ? WHERE id = ?`, autoExecute, time.Now(), sessionID)
+	return err
+}
+
 // DeleteSession deletes a session and all its messages
 func (s *Store) DeleteSession(id string) error {
 	// First try by ID
@@ -313,7 +330,7 @@ func (s *Store) DeleteSession(id string) error {
 // SearchSessions searches sessions by name
 func (s *Store) SearchSessions(query string) ([]*types.Session, error) {
 	rows, err := s.db.Query(`
-		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd
+		SELECT id, name, created_at, updated_at, provider, model, total_tokens, message_count, command_count, last_cwd, auto_execute
 		FROM sessions WHERE name LIKE ? ORDER BY updated_at DESC LIMIT 50
 	`, "%"+query+"%")
 	if err != nil {
@@ -326,7 +343,7 @@ func (s *Store) SearchSessions(query string) ([]*types.Session, error) {
 		sess := &types.Session{}
 		var lastCwd sql.NullString
 		if err := rows.Scan(&sess.ID, &sess.Name, &sess.CreatedAt, &sess.UpdatedAt, &sess.Provider, &sess.Model,
-			&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd); err != nil {
+			&sess.TotalTokens, &sess.MessageCount, &sess.CommandCount, &lastCwd, &sess.AutoExecute); err != nil {
 			return nil, err
 		}
 		if lastCwd.Valid {
