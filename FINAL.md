@@ -55,10 +55,17 @@
 - Streaming output for real-time response
 - Command refinement with feedback loop
 
-### 💬 Chat Mode
+### 💬 Chat Mode (Session-Based)
 - Interactive REPL for conversational shell command generation
-- Context-aware with system information
-- Command refinement with feedback loop
+- **Session persistence** — All conversations saved to SQLite
+- **Command output capture** — AI sees execution results for context-aware refinement
+- **Session picker UI** — Interactive selection of existing sessions
+- **Per-session auto-execute** — Toggle auto-execution independently per session
+- Token usage tracking per session
+- Auto-generated session titles from first interaction
+- Export/import sessions for backup and portability
+- Session statistics and management commands
+- Context-aware with system information and command history
 
 ### 🤖 LLM Client Mode
 - General-purpose LLM chat client (not shell-focused)
@@ -144,7 +151,9 @@ sosomi/
 │   │   ├── validation.go        # Config validation
 │   │   └── wizard.go            # Interactive setup
 │   ├── conversation/
-│   │   └── store.go             # SQLite conversation storage (NEW)
+│   │   └── store.go             # SQLite conversation storage (LLM mode)
+│   ├── session/
+│   │   └── store.go             # SQLite session storage (Chat mode)
 │   ├── safety/
 │   │   ├── analyzer.go          # Command analysis
 │   │   └── patterns.go          # Dangerous patterns
@@ -159,7 +168,7 @@ sosomi/
 │   ├── ui/
 │   │   └── ui.go                # Terminal UI with conversation picker
 │   └── types/
-│       └── types.go             # Shared types incl. Conversation
+│       └── types.go             # Shared types (Session, Conversation, etc.)
 ├── scripts/
 │   ├── zsh-integration.zsh      # Zsh bindings
 │   └── bash-integration.bash    # Bash bindings
@@ -204,10 +213,10 @@ sosomi/
                   └────────────────────┘    └─────────┘
                              ▲
                              │
-                  ┌──────────┴─────────┐
-                  │   conversation     │
-                  │  (LLM sessions)    │
-                  └────────────────────┘
+                  ┌──────────┴─────────┬──────────────┐
+                  │   conversation     │   session    │
+                  │  (LLM sessions)    │ (Chat mode)  │
+                  └────────────────────┴──────────────┘
 ```
 
 ### Design Patterns
@@ -430,7 +439,18 @@ history:
   retention_days: 30
 
 # ═══════════════════════════════════════════════════════════
-# LLM CLIENT MODE CONFIGURATION
+# CHAT MODE CONFIGURATION (Session-based shell assistant)
+# ═══════════════════════════════════════════════════════════
+chat:
+  enabled: true
+  db_path: ~/.local/share/sosomi/sessions.db
+  generate_titles: true
+  retention_days: 90
+  output_max_lines: 50        # Truncate command output for AI context
+  auto_execute_safe: false    # Global default (can override per-session)
+
+# ═══════════════════════════════════════════════════════════
+# LLM CLIENT MODE CONFIGURATION (General-purpose chat)
 # ═══════════════════════════════════════════════════════════
 llm:
   enabled: true
@@ -531,17 +551,100 @@ sosomi -s "check disk usage"
 sosomi -p work "deploy to production"
 ```
 
-### Interactive Mode
+### Chat Mode (Session-Based Shell Assistant)
+
+Chat mode provides a persistent, conversational shell assistant that maintains context across commands and captures execution output for AI-aware refinement.
+
+#### Starting Sessions
 
 ```bash
-# Shell command assistant (focused on generating shell commands)
+# Start a new session
 sosomi chat
+
+# Start with a name
+sosomi chat "Docker Setup"
+
+# Continue existing session by ID
+sosomi chat -c abc12345
+
+# Continue by name
+sosomi chat -c "Docker Setup"
+
+# Interactive session picker
+sosomi chat pick
 ```
 
-Commands in chat mode:
-- `/help` — Show help
-- `/history` — Recent commands
-- `/quit` — Exit
+#### In-Session Commands
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show available commands |
+| `/info` | Show session details (ID, tokens, commands, messages) |
+| `/history` | Display session command history |
+| `/tokens` | Show token usage for this session |
+| `/auto` | Show current auto-execute status |
+| `/auto on` | Enable auto-execute for safe commands (session-only) |
+| `/auto off` | Disable auto-execute (session-only) |
+| `/pick` | Switch to another session |
+| `/new` | Start a new session |
+| `/clear` | Clear screen |
+| `/quit` | Exit |
+
+#### Managing Sessions
+
+```bash
+# List all sessions
+sosomi chat list
+
+# Delete a session
+sosomi chat delete "Docker Setup"
+sosomi chat delete abc12345
+
+# Export for backup/portability
+sosomi chat export abc12345 backup.json
+
+# Import from file
+sosomi chat import backup.json
+
+# View statistics
+sosomi chat stats
+```
+
+#### Session Features
+
+**Context Awareness:**
+- AI sees all command outputs in the session
+- Can refine commands based on execution results
+- Remembers conversation context across reconnections
+
+**Per-Session Auto-Execute:**
+- Independent from profile settings
+- Enable with `/auto on` for trusted workflows
+- Only affects SAFE commands
+- Persists across session reconnections
+
+**Output Capture:**
+- Configurable truncation (`output_max_lines`)
+- Feeds back to AI for context-aware suggestions
+- Example: "reformat the output as json", "fix the error"
+
+**Session Picker:**
+```
+  🖥️  Session Picker
+──────────────────────────────────────────────────────
+  #   ID        Name              Cmds  Msgs  Tokens
+──────────────────────────────────────────────────────
+  1   abc12345  Docker Setup      12    24    2,341
+  2   def67890  Git Workflow      8     16    1,245
+──────────────────────────────────────────────────────
+  [1-9] Select  [c] Create  [s] Search  [q] Quit
+```
+
+#### Session Storage
+
+Sessions stored in SQLite at `~/.local/share/sosomi/sessions.db`:
+- **sessions** table: ID, name, provider, model, tokens, command/message counts, last_cwd, auto_execute
+- **session_messages** table: Role, content, tokens, command, output, exit_code, risk_level, duration, executed
 
 ### Intelligent Help
 
@@ -1070,12 +1173,13 @@ Current coverage breakdown:
 | `internal/safety` | 35 | Analyzer, patterns |
 | `internal/history` | 18 | SQLite store |
 | `internal/conversation` | 15 | LLM conversation store |
+| `internal/session` | 15 | Chat session store |
 | `internal/undo` | 22 | Backup manager |
 | `internal/shell` | 15 | Context, execution |
 | `internal/types` | 12 | Type methods |
-| `internal/ui` | 12 | UI components, conversation picker |
+| `internal/ui` | 12 | UI components, session/conversation pickers |
 | `internal/mcp` | 29 | MCP protocol |
-| **Total** | **260** | |
+| **Total** | **275** | |
 
 ### Writing Tests
 
