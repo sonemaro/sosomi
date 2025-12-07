@@ -218,36 +218,6 @@ func TestHistoryEntry_Fields(t *testing.T) {
 	}
 }
 
-func TestBackupEntry_Fields(t *testing.T) {
-	entry := BackupEntry{
-		ID:         "backup-123",
-		CommandID:  "cmd-456",
-		Command:    "rm -rf /tmp/test",
-		WorkingDir: "/Users/test",
-		Files: []BackedUpFile{
-			{
-				OriginalPath: "/tmp/test/file.txt",
-				BackupPath:   "/backups/backup-123/file.txt",
-				Hash:         "abc123",
-				Size:         512,
-				IsDir:        false,
-			},
-		},
-		TotalSize: 512,
-		Restored:  false,
-	}
-
-	if entry.ID != "backup-123" {
-		t.Errorf("Expected ID to be 'backup-123', got '%s'", entry.ID)
-	}
-	if len(entry.Files) != 1 {
-		t.Errorf("Expected 1 file, got %d", len(entry.Files))
-	}
-	if entry.Restored {
-		t.Error("Expected Restored to be false")
-	}
-}
-
 func TestMCPTool_Fields(t *testing.T) {
 	tool := MCPTool{
 		Name:        "read_file",

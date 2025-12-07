@@ -145,25 +145,6 @@ func TestValidate_DangerousSafetyLevel(t *testing.T) {
 	}
 }
 
-func TestValidate_DisabledBackup(t *testing.T) {
-	cfg := DefaultConfig()
-	cfg.Backup.Enabled = false
-
-	result := Validate(cfg)
-
-	// Should have a warning
-	found := false
-	for _, w := range result.Warnings {
-		if w.Field == "backup.enabled" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("Expected warning for disabled backup")
-	}
-}
-
 func TestValidate_DisabledHistory(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.History.Enabled = false

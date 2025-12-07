@@ -282,3 +282,57 @@ func TestOllamaMessage_Serialization(t *testing.T) {
 		t.Errorf("Expected content 'Hello!', got '%s'", parsed.Content)
 	}
 }
+
+func TestOllamaProvider_GenerateCommand_FakeEndpoint(t *testing.T) {
+	provider, err := NewOllamaProvider("http://fake-endpoint:11434", "llama3.2")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	sysCtx := types.SystemContext{
+		OS:         "darwin",
+		Shell:      "zsh",
+		CurrentDir: "/tmp",
+	}
+
+	_, err = provider.GenerateCommand(ctx, "test prompt", sysCtx)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}
+
+func TestOllamaProvider_Chat_FakeEndpoint(t *testing.T) {
+	provider, err := NewOllamaProvider("http://fake-endpoint:11434", "llama3.2")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	messages := []Message{
+		{Role: "user", Content: "test message"},
+	}
+
+	_, err = provider.Chat(ctx, messages)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}
+
+func TestOllamaProvider_ListModels_FakeEndpoint(t *testing.T) {
+	provider, err := NewOllamaProvider("http://fake-endpoint:11434", "llama3.2")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+
+	_, err = provider.ListModels(ctx)
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}

@@ -30,8 +30,8 @@ func captureOutput(f func()) string {
 
 func TestColorFunctions(t *testing.T) {
 	tests := []struct {
-		name string
-		fn   func(a ...interface{}) string
+		name  string
+		fn    func(a ...interface{}) string
 		input string
 	}{
 		{"Green", Green, "test"},
@@ -280,24 +280,6 @@ func TestFormatDuration(t *testing.T) {
 	}
 }
 
-func TestFormatSize(t *testing.T) {
-	// Test that size formatting works via PrintBackupInfo
-	// The formatSize function is unexported, so we test indirectly
-	entry := &types.BackupEntry{
-		ID:        "test-backup-id-12345678",
-		TotalSize: 1024,
-		Files:     []types.BackedUpFile{},
-	}
-
-	output := captureOutput(func() {
-		PrintBackupInfo(entry)
-	})
-
-	if !strings.Contains(output, "KB") && !strings.Contains(output, "B") {
-		t.Log("Size formatting tested through PrintBackupInfo")
-	}
-}
-
 func TestTruncate(t *testing.T) {
 	// Test the truncate function indirectly through PrintAnalysis
 	analysis := &types.CommandAnalysis{
@@ -324,25 +306,6 @@ func TestPrintHistoryEntry(t *testing.T) {
 
 	if !strings.Contains(output, "History") {
 		t.Error("Should display history info")
-	}
-}
-
-func TestPrintBackupEntry(t *testing.T) {
-	entry := &types.BackupEntry{
-		ID:        "backup-123-456-789",
-		Command:   "rm -rf test",
-		TotalSize: 1024,
-		Files: []types.BackedUpFile{
-			{OriginalPath: "/tmp/test.txt", Size: 512},
-		},
-	}
-
-	output := captureOutput(func() {
-		PrintBackupInfo(entry)
-	})
-
-	if !strings.Contains(output, "Backup") {
-		t.Error("PrintBackupInfo should mention backup")
 	}
 }
 
@@ -443,5 +406,74 @@ func TestFormatDurationShortEdgeCases(t *testing.T) {
 				t.Errorf("FormatDurationShort(%v) = %q, want %q", tt.duration, result, tt.contains)
 			}
 		})
+	}
+}
+
+func TestGetRiskColor(t *testing.T) {
+	tests := []struct {
+		name string
+		risk types.RiskLevel
+	}{
+		{"critical", types.RiskCritical},
+		{"safe", types.RiskSafe},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getRiskColor(tt.risk)
+			// Just check it returns a function (non-nil)
+			if result == nil {
+				t.Errorf("getRiskColor(%v) returned nil", tt.risk)
+			}
+		})
+	}
+}
+
+func TestPrintSimpleConfirm(t *testing.T) {
+	output := captureOutput(func() {
+		PrintSimpleConfirm("Proceed?")
+	})
+
+	// Should print something with the message
+	if !strings.Contains(output, "Proceed") {
+		t.Error("PrintSimpleConfirm should print the message")
+	}
+}
+
+func TestPrintHeader(t *testing.T) {
+	output := captureOutput(func() {
+		PrintHeader()
+	})
+
+	// Should print header with sosomi name
+	if !strings.Contains(strings.ToLower(output), "sosomi") {
+		t.Error("PrintHeader should contain 'sosomi'")
+	}
+}
+
+func TestFilterSessions(t *testing.T) {
+	now := time.Now()
+	sessions := []*types.Session{
+		{ID: "1", Name: "test-session-1", CreatedAt: now},
+		{ID: "2", Name: "prod-session", CreatedAt: now},
+		{ID: "3", Name: "test-session-2", CreatedAt: now},
+	}
+
+	// Test filtering
+	filtered := FilterSessions(sessions, "test")
+	if len(filtered) != 2 {
+		t.Errorf("Expected 2 sessions with 'test', got %d", len(filtered))
+	}
+
+	// Test no matches
+	filtered = FilterSessions(sessions, "nonexistent")
+	if len(filtered) != 0 {
+		t.Errorf("Expected 0 sessions, got %d", len(filtered))
+	}
+
+	// Test empty filter (should return all)
+	filtered = FilterSessions(sessions, "")
+	if len(filtered) != 3 {
+		t.Errorf("Expected all 3 sessions with empty filter, got %d", len(filtered))
 	}
 }

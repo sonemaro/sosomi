@@ -232,3 +232,113 @@ func TestNewGenericOpenAIProvider_NoEndpoint(t *testing.T) {
 		t.Error("Expected error when creating generic provider without endpoint")
 	}
 }
+
+func TestNewProviderFromConfig_OpenAI(t *testing.T) {
+	// Initialize config first
+	config.Init("")
+
+	// Set test config values
+	cfg := config.Get()
+	cfg.Provider.Name = "openai"
+	cfg.Provider.APIKey = "test-key"
+	cfg.Provider.Endpoint = "https://api.openai.com/v1"
+	cfg.Model.Name = "gpt-4o"
+
+	provider, err := NewProviderFromConfig()
+	if err != nil {
+		t.Fatalf("NewProviderFromConfig failed: %v", err)
+	}
+
+	if provider == nil {
+		t.Fatal("NewProviderFromConfig returned nil")
+	}
+
+	if provider.Name() != "openai" {
+		t.Errorf("Expected provider name 'openai', got '%s'", provider.Name())
+	}
+}
+
+func TestNewProviderFromConfig_Ollama(t *testing.T) {
+	config.Init("")
+
+	cfg := config.Get()
+	cfg.Provider.Name = "ollama"
+	cfg.Provider.Endpoint = "http://localhost:11434"
+	cfg.Model.Name = "llama3.2"
+
+	provider, err := NewProviderFromConfig()
+	if err != nil {
+		t.Fatalf("NewProviderFromConfig failed: %v", err)
+	}
+
+	if provider.Name() != "ollama" {
+		t.Errorf("Expected provider name 'ollama', got '%s'", provider.Name())
+	}
+}
+
+func TestNewProviderFromConfig_LMStudio(t *testing.T) {
+	config.Init("")
+
+	cfg := config.Get()
+	cfg.Provider.Name = "lmstudio"
+	cfg.Provider.Endpoint = "http://localhost:1234"
+	cfg.Model.Name = "local-model"
+
+	provider, err := NewProviderFromConfig()
+	if err != nil {
+		t.Fatalf("NewProviderFromConfig failed: %v", err)
+	}
+
+	if provider.Name() != "lmstudio" {
+		t.Errorf("Expected provider name 'lmstudio', got '%s'", provider.Name())
+	}
+}
+
+func TestNewProviderFromConfig_LlamaCpp(t *testing.T) {
+	config.Init("")
+
+	cfg := config.Get()
+	cfg.Provider.Name = "llamacpp"
+	cfg.Provider.Endpoint = "http://localhost:8080"
+	cfg.Model.Name = "local-model"
+
+	provider, err := NewProviderFromConfig()
+	if err != nil {
+		t.Fatalf("NewProviderFromConfig failed: %v", err)
+	}
+
+	if provider.Name() != "llamacpp" {
+		t.Errorf("Expected provider name 'llamacpp', got '%s'", provider.Name())
+	}
+}
+
+func TestNewProviderFromConfig_Generic(t *testing.T) {
+	config.Init("")
+
+	cfg := config.Get()
+	cfg.Provider.Name = "generic"
+	cfg.Provider.APIKey = "test-key"
+	cfg.Provider.Endpoint = "http://custom-endpoint/v1"
+	cfg.Model.Name = "custom-model"
+
+	provider, err := NewProviderFromConfig()
+	if err != nil {
+		t.Fatalf("NewProviderFromConfig failed: %v", err)
+	}
+
+	if provider.Name() != "generic" {
+		t.Errorf("Expected provider name 'generic', got '%s'", provider.Name())
+	}
+}
+
+func TestNewProviderFromConfig_UnknownProvider(t *testing.T) {
+	config.Init("")
+
+	cfg := config.Get()
+	cfg.Provider.Name = "unknown-provider"
+
+	_, err := NewProviderFromConfig()
+	if err == nil {
+		t.Error("Expected error for unknown provider")
+	}
+}

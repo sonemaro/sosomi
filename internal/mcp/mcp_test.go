@@ -362,3 +362,33 @@ func TestCallBuiltInTool_Unknown(t *testing.T) {
 		t.Error("Expected error result for unknown tool")
 	}
 }
+
+func TestExecuteBuiltinTool_ListDirectory(t *testing.T) {
+	result, err := ExecuteBuiltinTool("list_directory", map[string]interface{}{
+		"path": ".",
+	})
+	if err != nil {
+		t.Fatalf("ExecuteBuiltinTool returned error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+
+	// Result may be error or success depending on permissions
+	if result.IsError {
+		t.Logf("Tool returned error (may be expected): %s", result.Content)
+	}
+}
+
+func TestExecuteBuiltinTool_InvalidParams(t *testing.T) {
+	// Missing required path parameter
+	result, err := ExecuteBuiltinTool("read_file", map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("ExecuteBuiltinTool returned error: %v", err)
+	}
+
+	if !result.IsError {
+		t.Error("Expected error for missing parameters")
+	}
+}

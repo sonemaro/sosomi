@@ -29,9 +29,6 @@ type Config struct {
 	// Safety settings
 	Safety SafetyConfig `yaml:"safety" mapstructure:"safety"`
 
-	// Backup settings
-	Backup BackupConfig `yaml:"backup" mapstructure:"backup"`
-
 	// History settings
 	History HistoryConfig `yaml:"history" mapstructure:"history"`
 
@@ -91,15 +88,6 @@ type SafetyConfig struct {
 	ProtectedPaths      []string `yaml:"protected_paths,omitempty" mapstructure:"protected_paths"`
 	AllowedPaths        []string `yaml:"allowed_paths,omitempty" mapstructure:"allowed_paths"`
 	CustomRulesPath     string   `yaml:"custom_rules_path,omitempty" mapstructure:"custom_rules_path"`
-}
-
-// BackupConfig holds backup settings
-type BackupConfig struct {
-	Enabled       bool     `yaml:"enabled" mapstructure:"enabled"`
-	Dir           string   `yaml:"dir" mapstructure:"dir"`
-	RetentionDays int      `yaml:"retention_days" mapstructure:"retention_days"`
-	MaxSizeMB     int      `yaml:"max_size_mb" mapstructure:"max_size_mb"`
-	Exclude       []string `yaml:"exclude,omitempty" mapstructure:"exclude"`
 }
 
 // HistoryConfig holds history settings
@@ -203,14 +191,6 @@ func DefaultConfig() *Config {
 			BlockedCommands:     []string{"shutdown", "reboot", "init 0", "init 6", ":(){ :|:& };:"},
 			ProtectedPaths:      []string{"/", "/etc", "/usr", "/bin", "/sbin", "/boot"},
 			CustomRulesPath:     filepath.Join(configDir, "safety_rules.yaml"),
-		},
-
-		Backup: BackupConfig{
-			Enabled:       true,
-			Dir:           filepath.Join(dataDir, "backups"),
-			RetentionDays: 7,
-			MaxSizeMB:     500,
-			Exclude:       []string{"node_modules", ".git", "__pycache__", "*.log", ".DS_Store"},
 		},
 
 		History: HistoryConfig{
@@ -400,10 +380,6 @@ func copyConfig(src *Config) *Config {
 		dst.Safety.AllowedPaths = make([]string, len(src.Safety.AllowedPaths))
 		copy(dst.Safety.AllowedPaths, src.Safety.AllowedPaths)
 	}
-	if src.Backup.Exclude != nil {
-		dst.Backup.Exclude = make([]string, len(src.Backup.Exclude))
-		copy(dst.Backup.Exclude, src.Backup.Exclude)
-	}
 	if src.MCP.Servers != nil {
 		dst.MCP.Servers = make([]string, len(src.MCP.Servers))
 		copy(dst.MCP.Servers, src.MCP.Servers)
@@ -468,16 +444,6 @@ func mergeConfig(dst, src *Config) {
 	}
 	if len(src.Safety.AllowedPaths) > 0 {
 		dst.Safety.AllowedPaths = src.Safety.AllowedPaths
-	}
-
-	if src.Backup.Dir != "" {
-		dst.Backup.Dir = src.Backup.Dir
-	}
-	if src.Backup.RetentionDays != 0 {
-		dst.Backup.RetentionDays = src.Backup.RetentionDays
-	}
-	if src.Backup.MaxSizeMB != 0 {
-		dst.Backup.MaxSizeMB = src.Backup.MaxSizeMB
 	}
 
 	if src.History.DBPath != "" {
@@ -629,22 +595,6 @@ func setNestedValue(c *Config, path []string, value interface{}) error {
 			}
 			return nil
 		}
-	case "backup":
-		if len(path) >= 2 {
-			switch path[1] {
-			case "enabled":
-				c.Backup.Enabled = toBool(value)
-			case "dir":
-				c.Backup.Dir = strVal
-			case "retention_days":
-				c.Backup.RetentionDays = toInt(value)
-			case "max_size_mb":
-				c.Backup.MaxSizeMB = toInt(value)
-			default:
-				return fmt.Errorf("unknown key: %s", strings.Join(path, "."))
-			}
-			return nil
-		}
 	case "history":
 		if len(path) >= 2 {
 			switch path[1] {
@@ -763,16 +713,6 @@ func getNestedValue(c *Config, path []string) (interface{}, error) {
 			return c.Safety.RequireConfirmation, nil
 		case "auto_execute_safe":
 			return c.Safety.AutoExecuteSafe, nil
-		}
-	case "backup":
-		if len(path) == 1 {
-			return c.Backup, nil
-		}
-		switch path[1] {
-		case "enabled":
-			return c.Backup.Enabled, nil
-		case "dir":
-			return c.Backup.Dir, nil
 		}
 	case "history":
 		if len(path) == 1 {
@@ -929,7 +869,6 @@ func EnsureDirs() error {
 	paths := GetConfigPaths()
 
 	dirs := []string{
-		c.Backup.Dir,
 		filepath.Dir(c.History.DBPath),
 		c.MCP.ToolsDir,
 		filepath.Dir(c.Safety.CustomRulesPath),
@@ -980,11 +919,6 @@ type LegacyConfig struct {
 	RequireConfirmation  bool     `yaml:"require_confirmation"`
 	BlockedCommands      []string `yaml:"blocked_commands"`
 	AllowedPaths         []string `yaml:"allowed_paths"`
-	BackupEnabled        bool     `yaml:"backup_enabled"`
-	BackupDir            string   `yaml:"backup_dir"`
-	BackupRetentionDays  int      `yaml:"backup_retention_days"`
-	BackupMaxSizeMB      int      `yaml:"backup_max_size_mb"`
-	BackupExclude        []string `yaml:"backup_exclude"`
 	HistoryEnabled       bool     `yaml:"history_enabled"`
 	HistoryDBPath        string   `yaml:"history_db_path"`
 	HistoryRetentionDays int      `yaml:"history_retention_days"`
@@ -1075,21 +1009,6 @@ func migrateLegacy(legacy *LegacyConfig, c *Config) {
 	}
 	if legacy.CustomRulesPath != "" {
 		c.Safety.CustomRulesPath = legacy.CustomRulesPath
-	}
-
-	// Backup
-	c.Backup.Enabled = legacy.BackupEnabled
-	if legacy.BackupDir != "" {
-		c.Backup.Dir = legacy.BackupDir
-	}
-	if legacy.BackupRetentionDays > 0 {
-		c.Backup.RetentionDays = legacy.BackupRetentionDays
-	}
-	if legacy.BackupMaxSizeMB > 0 {
-		c.Backup.MaxSizeMB = legacy.BackupMaxSizeMB
-	}
-	if len(legacy.BackupExclude) > 0 {
-		c.Backup.Exclude = legacy.BackupExclude
 	}
 
 	// History

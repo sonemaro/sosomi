@@ -129,28 +129,6 @@ type HistoryEntry struct {
 	TotalTokens      int       `json:"total_tokens,omitempty"`
 }
 
-// BackupEntry represents a backup of files before command execution
-type BackupEntry struct {
-	ID         string         `json:"id"`
-	CommandID  string         `json:"command_id"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Command    string         `json:"command"`
-	WorkingDir string         `json:"working_dir"`
-	Files      []BackedUpFile `json:"files"`
-	TotalSize  int64          `json:"total_size"`
-	Restored   bool           `json:"restored"`
-	RestoredAt *time.Time     `json:"restored_at,omitempty"`
-}
-
-// BackedUpFile represents a single backed up file
-type BackedUpFile struct {
-	OriginalPath string `json:"original_path"`
-	BackupPath   string `json:"backup_path"`
-	Hash         string `json:"hash"`
-	Size         int64  `json:"size"`
-	IsDir        bool   `json:"is_dir"`
-}
-
 // MCPTool represents a tool exposed via MCP
 type MCPTool struct {
 	Name        string                 `json:"name"`

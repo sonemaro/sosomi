@@ -7,7 +7,6 @@ Sosomi is a powerful CLI tool that converts natural language to shell commands w
 - **🤖 AI-Powered Command Generation**: Convert natural language to shell commands
 - **🛡️ Safety Guardrails**: Pattern-based and AST-parsed command analysis
 - **⚡ Multiple Providers**: OpenAI, Ollama, LM Studio, llama.cpp, and generic OpenAI-compatible endpoints
-- **↩️ Undo/Rollback**: Automatic backups before dangerous operations
 - **📝 Audit Logging**: Full history of all commands with searchable database
 - **🔄 MCP Support**: Model Context Protocol for extensibility
 - **🎨 Beautiful UI**: Rich terminal output with colors and progress indicators
@@ -95,12 +94,6 @@ blocked_commands:             # Always blocked
   - init 0
   - init 6
 
-# Backup Settings
-backup_enabled: true
-backup_dir: ~/.sosomi/backups
-backup_retention_days: 7
-backup_max_size_mb: 500
-
 # History Settings
 history_enabled: true
 history_db_path: ~/.sosomi/history.db
@@ -145,11 +138,8 @@ sosomi "compress all log files older than 30 days"
 # Dry-run to preview what would happen
 sosomi "remove all node_modules directories" --dry-run
 
-# Force execution of blocked commands (use with extreme caution)
-sosomi "format disk" --force
-
 # Use strict safety profile
-sosomi "delete old backups" --profile strict
+sosomi "delete old files" --profile strict
 ```
 
 ### Working with Local Models
@@ -165,7 +155,7 @@ sosomi "show network interfaces" -p lmstudio
 sosomi "check disk health" -p llamacpp
 ```
 
-### History and Undo
+### History
 
 ```bash
 # View command history
@@ -173,15 +163,6 @@ sosomi history
 
 # Show history statistics
 sosomi history stats
-
-# Undo the last risky operation
-sosomi undo
-
-# List available backups
-sosomi undo list
-
-# Restore a specific backup
-sosomi undo abc12345
 ```
 
 ### Configuration
@@ -203,7 +184,7 @@ Sosomi analyzes commands and assigns risk levels:
 |-------|------|-------------|
 | SAFE | 🟢 | Read-only or low-risk operations |
 | CAUTION | 🟡 | Modifying operations, review recommended |
-| DANGEROUS | 🟠 | High-risk operations, backup will be created |
+| DANGEROUS | 🟠 | High-risk operations, review carefully |
 | CRITICAL | 🔴 | Blocked by default, could cause data loss |
 
 ## Command Flow
@@ -214,9 +195,8 @@ Sosomi analyzes commands and assigns risk levels:
 4. **Analysis**: Command is analyzed for safety using pattern matching and shell AST parsing
 5. **Display**: Command, explanation, and risk level are shown
 6. **Confirmation**: User can execute, modify, explain, or dry-run
-7. **Backup**: For risky operations, affected files are backed up
-8. **Execution**: Command runs with output capture
-9. **Logging**: Everything is logged for audit and undo
+7. **Execution**: Command runs with output capture
+8. **Logging**: Everything is logged for audit
 
 ## Architecture
 
@@ -231,8 +211,7 @@ sosomi/
 │   ├── safety/          # Command safety analysis
 │   ├── shell/           # System context and execution
 │   ├── types/           # Shared type definitions
-│   ├── ui/              # Terminal UI components
-│   └── undo/            # Backup and rollback system
+│   └── ui/              # Terminal UI components
 └── scripts/             # Shell integration scripts
 ```
 

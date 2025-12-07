@@ -32,7 +32,6 @@
 |---------|-------------------|
 | AI can generate dangerous commands | Multi-layer safety analysis with AST parsing |
 | Cloud API keys can leak | Secure credential handling via env vars or password managers |
-| Commands can cause irreversible damage | Automatic backup before risky operations |
 | No audit trail for AI-generated commands | Full SQLite-based command history |
 | Limited to cloud AI | Support for local models (Ollama, LM Studio, llama.cpp) |
 
@@ -40,9 +39,8 @@
 
 1. **Safety First** — Every command is analyzed before execution
 2. **User Control** — Always confirm, never surprise
-3. **Reversibility** — Backup everything that matters
-4. **Transparency** — Show what will happen before it does
-5. **Flexibility** — Work with any AI provider
+3. **Transparency** — Show what will happen before it does
+4. **Flexibility** — Work with any AI provider
 
 ---
 
@@ -93,13 +91,6 @@
 - **Pattern Matching** — 30+ dangerous patterns detected
 - **Path Protection** — Warns about system directories
 - **Blocked Commands** — Configurable blocklist (shutdown, reboot, fork bombs)
-
-### 📦 Backup & Undo
-- Automatic file backup before risky operations
-- SHA256 verification of backed-up files
-- One-command restore with `sosomi undo`
-- Configurable retention (default: 7 days)
-- Size limits with automatic cleanup
 
 ### 📜 History & Audit
 - SQLite-based command logging
@@ -161,8 +152,6 @@ sosomi/
 │   │   └── context.go           # System context & execution
 │   ├── history/
 │   │   └── store.go             # SQLite history with token tracking
-│   ├── undo/
-│   │   └── backup.go            # Backup manager
 │   ├── mcp/
 │   │   └── mcp.go               # MCP protocol
 │   ├── ui/
@@ -201,13 +190,13 @@ sosomi/
         │              ┌────┴─────┐              │
         │              │          │              │
         ▼              ▼          ▼              ▼
-   ┌─────────┐    ┌────────┐ ┌────────┐    ┌─────────┐
-   │  types  │◄───│ shell  │ │  undo  │    │   ui    │
-   │         │    │        │ │        │    │         │
-   └─────────┘    └────────┘ └────────┘    └─────────┘
-        ▲              │          │              ▲
-        │              │          │              │
-        │         ┌────┴──────────┴────┐    ┌────┴────┐
+   ┌─────────┐    ┌────────┐    ┌─────────┐
+   │  types  │◄───│ shell  │    │   ui    │
+   │         │    │        │    │         │
+   └─────────┘    └────────┘    └─────────┘
+        ▲              │              ▲
+        │              │              │
+        │         ┌────┴──────────┐    ┌────┴────┐
         └─────────│      history       │    │  mcp    │
                   │                    │    │         │
                   └────────────────────┘    └─────────┘
@@ -262,7 +251,7 @@ sosomi/
 │  • Path Check → Current directory only                              │
 │  • Blocked Check → Not in blocklist                                 │
 │  ──────────────────────────────────────────────────────             │
-│  Result: SAFE (🟢)    Reversible: Yes    Backup: Not needed         │
+│  Result: SAFE (🟢)    Reversible: Yes                               │
 └────────────────────────────┬─────────────────────────────────────────┘
                              │
                              ▼
@@ -274,7 +263,6 @@ sosomi/
                              ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │                      EXECUTION                                       │
-│  • Backup affected files (if risky)                                 │
 │  • Execute command                                                  │
 │  • Capture output                                                   │
 │  • Log to history                                                   │
@@ -414,21 +402,6 @@ safety:
   # Only allow operations in these paths (empty = allow all)
   # allowed_paths:
   #   - /home/user/projects
-
-# ═══════════════════════════════════════════════════════════
-# BACKUP CONFIGURATION
-# ═══════════════════════════════════════════════════════════
-backup:
-  enabled: true
-  dir: ~/.local/share/sosomi/backups
-  retention_days: 7
-  max_size_mb: 500
-  exclude:
-    - node_modules
-    - .git
-    - __pycache__
-    - "*.log"
-    - .DS_Store
 
 # ═══════════════════════════════════════════════════════════
 # HISTORY CONFIGURATION
@@ -655,7 +628,7 @@ sosomi ask "what providers are supported?"
 sosomi ask "how to use ollama with local models?"
 ```
 
-### History & Undo
+### History
 
 ```bash
 # View recent commands
@@ -666,12 +639,6 @@ sosomi history search "docker"
 
 # View statistics
 sosomi history stats
-
-# Undo last command
-sosomi undo
-
-# List available backups
-sosomi undo list
 ```
 
 ### Configuration Management
@@ -928,43 +895,6 @@ Command String
 - `git push --force`
 - `docker system prune`
 
-### Backup Strategy
-
-```
-Before risky command execution:
-     │
-     ▼
-┌─────────────────────────────────────┐
-│    1. Identify affected files       │
-│       from CommandAnalysis          │
-└────────────────┬────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────┐
-│    2. Filter by exclusion list      │
-│       (node_modules, .git, etc.)    │
-└────────────────┬────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────┐
-│    3. Check size limits             │
-│       (default: 500MB total)        │
-└────────────────┬────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────┐
-│    4. Copy files with structure     │
-│       Preserve permissions          │
-│       Compute SHA256 hashes         │
-└────────────────┬────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────┐
-│    5. Save metadata.json            │
-│       Command, timestamp, files     │
-└─────────────────────────────────────┘
-```
-
 ---
 
 ## AI Providers
@@ -1174,7 +1104,6 @@ Current coverage breakdown:
 | `internal/history` | 18 | SQLite store |
 | `internal/conversation` | 15 | LLM conversation store |
 | `internal/session` | 15 | Chat session store |
-| `internal/undo` | 22 | Backup manager |
 | `internal/shell` | 15 | Context, execution |
 | `internal/types` | 12 | Type methods |
 | `internal/ui` | 12 | UI components, session/conversation pickers |

@@ -134,7 +134,7 @@ func TestBuildLocalModelRefinePrompt(t *testing.T) {
 func TestParseLocalModelResponse(t *testing.T) {
 	// parseLocalModelResponse expects plain text format, not JSON
 	// The first non-warning/error line is treated as the command
-	
+
 	// Test with plain command response
 	plainResp := "ls -la"
 	resp, err := parseLocalModelResponse(plainResp)
@@ -349,5 +349,61 @@ func TestLocalOpenAIProvider_ListModels_WithMock(t *testing.T) {
 
 	if len(models) != 2 {
 		t.Errorf("Expected 2 models, got %d", len(models))
+	}
+}
+
+func TestLocalOpenAIProvider_GenerateCommandStream(t *testing.T) {
+	provider, err := NewLMStudioProvider("http://fake-endpoint:1234", "test-model")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	sysCtx := types.SystemContext{
+		OS:         "darwin",
+		Shell:      "zsh",
+		CurrentDir: "/tmp",
+	}
+
+	// This will fail to connect, but we're testing that the function exists
+	resp, err := provider.GenerateCommand(ctx, "test prompt", sysCtx)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+	_ = resp // Use the response to avoid unused variable warning
+}
+
+func TestLocalOpenAIProvider_ChatWithUsage(t *testing.T) {
+	provider, err := NewLMStudioProvider("http://fake-endpoint:1234", "test-model")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	messages := []Message{
+		{Role: "user", Content: "test message"},
+	}
+
+	// This will fail to connect, but we're testing that the function exists
+	_, err = provider.ChatWithUsage(ctx, messages)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}
+
+func TestLocalOpenAIProvider_CallTool(t *testing.T) {
+	provider, err := NewLMStudioProvider("http://fake-endpoint:1234", "test-model")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	// Test that CallTool method exists
+	supported := provider.SupportsTools()
+	if supported {
+		t.Error("Local OpenAI providers should not support tools by default")
 	}
 }

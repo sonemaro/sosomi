@@ -153,10 +153,10 @@ func PrintAnalysis(analysis *types.CommandAnalysis) {
 
 	// Reversible
 	reversibleIcon := "✅"
-	reversibleText := "Yes (backup will be created)"
+	reversibleText := "Yes"
 	if !analysis.Reversible {
 		reversibleIcon = "❌"
-		reversibleText = "No (cannot be undone)"
+		reversibleText = "No (irreversible)"
 	}
 	reverseLine := fmt.Sprintf("  ↩️  Reversible: %s %s", reversibleIcon, reversibleText)
 	fmt.Printf("%s%s%s%s\n", BoxVertical, reverseLine, strings.Repeat(" ", width-len(reverseLine)+4), BoxVertical)
@@ -229,16 +229,6 @@ func PrintExecutionResult(stdout, stderr string, exitCode int, durationMs int64)
 	} else {
 		fmt.Printf("%s Command failed with exit code %d (%.2fs)\n", Error("✗"), exitCode, float64(durationMs)/1000)
 	}
-}
-
-// PrintBackupInfo displays backup information
-func PrintBackupInfo(backup *types.BackupEntry) {
-	fmt.Println()
-	fmt.Printf("📦 %s\n", Bold("Backup Created"))
-	fmt.Printf("   ID: %s\n", Dim(backup.ID[:8]+"..."))
-	fmt.Printf("   Files: %d\n", len(backup.Files))
-	fmt.Printf("   Size: %s\n", formatSize(backup.TotalSize))
-	fmt.Printf("   Use '%s' to undo\n", Cyan("sosomi undo"))
 }
 
 // PrintHeader displays the sosomi header

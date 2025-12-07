@@ -72,7 +72,6 @@ func Validate(cfg *Config) *ValidationResult {
 	validateProvider(cfg, result)
 	validateModel(cfg, result)
 	validateSafety(cfg, result)
-	validateBackup(cfg, result)
 	validateHistory(cfg, result)
 	validateMCP(cfg, result)
 
@@ -88,7 +87,7 @@ func validateProvider(cfg *Config, result *ValidationResult) {
 	// Validate provider name
 	validProviders := []string{"openai", "ollama", "lmstudio", "llamacpp", "local", "generic"}
 	providerName := strings.ToLower(cfg.Provider.Name)
-	
+
 	if providerName == "" {
 		result.Errors = append(result.Errors, ValidationError{
 			Field:   "provider.name",
@@ -234,24 +233,6 @@ func validateSafety(cfg *Config, result *ValidationResult) {
 			Field:   "safety.level",
 			Message: "safety level is set to 'dangerous'",
 			Hint:    "Commands will be executed with minimal safety checks!",
-		})
-	}
-}
-
-func validateBackup(cfg *Config, result *ValidationResult) {
-	if !cfg.Backup.Enabled {
-		result.Warnings = append(result.Warnings, ValidationError{
-			Field:   "backup.enabled",
-			Message: "backup is disabled",
-			Hint:    "Enable backups to recover from mistakes with 'sosomi undo'",
-		})
-	}
-
-	if cfg.Backup.RetentionDays < 1 {
-		result.Warnings = append(result.Warnings, ValidationError{
-			Field:   "backup.retention_days",
-			Message: "retention_days is very low or zero",
-			Hint:    "Set to at least 7 to keep recent backups",
 		})
 	}
 }

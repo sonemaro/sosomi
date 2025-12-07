@@ -116,32 +116,6 @@ safety:
   # custom_rules_path: ~/.config/sosomi/safety_rules.yaml
 
 # ============================================
-# Backup Configuration
-# ============================================
-backup:
-  # Enable automatic backups before risky operations
-  enabled: true
-  
-  # Backup storage directory
-  dir: ~/.local/share/sosomi/backups
-  
-  # Days to keep backups
-  retention_days: 7
-  
-  # Maximum total backup size in MB
-  max_size_mb: 500
-  
-  # Patterns to exclude from backups
-  exclude:
-    - node_modules
-    - .git
-    - __pycache__
-    - "*.log"
-    - .DS_Store
-    - venv
-    - .venv
-
-# ============================================
 # History Configuration
 # ============================================
 history:

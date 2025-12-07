@@ -256,3 +256,60 @@ func TestOpenAIProvider_RefineCommand_WithMock(t *testing.T) {
 		t.Errorf("Expected command 'ls -lS', got '%s'", resp.Command)
 	}
 }
+
+func TestOpenAIProvider_GenerateCommand_FakeEndpoint(t *testing.T) {
+	provider, err := NewOpenAIProvider("test-key", "http://fake-endpoint", "gpt-4o")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	sysCtx := types.SystemContext{
+		OS:         "darwin",
+		Shell:      "zsh",
+		CurrentDir: "/tmp",
+	}
+
+	// This will fail to connect, but we're testing that the function exists
+	_, err = provider.GenerateCommand(ctx, "test prompt", sysCtx)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}
+
+func TestOpenAIProvider_Chat_FakeEndpoint(t *testing.T) {
+	provider, err := NewOpenAIProvider("test-key", "http://fake-endpoint", "gpt-4o")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+	messages := []Message{
+		{Role: "user", Content: "test message"},
+	}
+
+	// This will fail to connect, but we're testing that the function exists
+	_, err = provider.Chat(ctx, messages)
+
+	// Expect an error since endpoint is fake
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}
+
+func TestOpenAIProvider_ListModels_FakeEndpoint(t *testing.T) {
+	provider, err := NewOpenAIProvider("test-key", "http://fake-endpoint", "gpt-4o")
+	if err != nil {
+		t.Fatalf("Failed to create provider: %v", err)
+	}
+
+	ctx := context.Background()
+
+	// Test that ListModels method exists and returns error for fake endpoint
+	_, err = provider.ListModels(ctx)
+	if err == nil {
+		t.Error("Expected error for fake endpoint")
+	}
+}

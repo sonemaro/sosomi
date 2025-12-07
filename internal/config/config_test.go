@@ -61,17 +61,6 @@ func TestDefaultConfig(t *testing.T) {
 		t.Errorf("Expected 5 default BlockedCommands, got %d", len(cfg.Safety.BlockedCommands))
 	}
 
-	// Test backup defaults
-	if !cfg.Backup.Enabled {
-		t.Error("Expected default Backup.Enabled to be true")
-	}
-	if cfg.Backup.RetentionDays != 7 {
-		t.Errorf("Expected default Backup.RetentionDays to be 7, got %d", cfg.Backup.RetentionDays)
-	}
-	if cfg.Backup.MaxSizeMB != 500 {
-		t.Errorf("Expected default Backup.MaxSizeMB to be 500, got %d", cfg.Backup.MaxSizeMB)
-	}
-
 	// Test history defaults
 	if !cfg.History.Enabled {
 		t.Error("Expected default History.Enabled to be true")
@@ -149,8 +138,6 @@ model:
 safety:
   level: strict
   auto_execute_safe: true
-backup:
-  enabled: false
 `
 	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
 		t.Fatalf("Failed to write temp config: %v", err)
@@ -173,9 +160,6 @@ backup:
 	}
 	if !got.Safety.AutoExecuteSafe {
 		t.Error("Expected Safety.AutoExecuteSafe to be true")
-	}
-	if got.Backup.Enabled {
-		t.Error("Expected Backup.Enabled to be false")
 	}
 }
 
@@ -221,7 +205,7 @@ func TestGetAPIKey(t *testing.T) {
 
 	// Test with environment variable
 	os.Setenv("OPENAI_API_KEY", "test-api-key-from-env")
-	
+
 	cfg := DefaultConfig()
 	cfg.Provider.APIKeyEnv = "OPENAI_API_KEY"
 	activeCfg = cfg
@@ -315,7 +299,6 @@ func TestEnsureDirs(t *testing.T) {
 
 	ResetInitialized()
 	baseCfg := DefaultConfig()
-	baseCfg.Backup.Dir = filepath.Join(tmpDir, "backups")
 	baseCfg.History.DBPath = filepath.Join(tmpDir, "data", "history.db")
 	baseCfg.MCP.ToolsDir = filepath.Join(tmpDir, "mcp_tools")
 	baseCfg.Safety.CustomRulesPath = filepath.Join(tmpDir, "rules", "safety.yaml")
@@ -327,10 +310,6 @@ func TestEnsureDirs(t *testing.T) {
 	}
 
 	// Check that directories were created
-	if _, err := os.Stat(baseCfg.Backup.Dir); os.IsNotExist(err) {
-		t.Error("Backup directory was not created")
-	}
-
 	historyDir := filepath.Dir(baseCfg.History.DBPath)
 	if _, err := os.Stat(historyDir); os.IsNotExist(err) {
 		t.Error("History directory was not created")
@@ -348,21 +327,6 @@ func TestBlockedCommands(t *testing.T) {
 	for i, cmd := range expectedBlocked {
 		if cfg.Safety.BlockedCommands[i] != cmd {
 			t.Errorf("Expected blocked command '%s' at index %d, got '%s'", cmd, i, cfg.Safety.BlockedCommands[i])
-		}
-	}
-}
-
-func TestBackupExclude(t *testing.T) {
-	cfg := DefaultConfig()
-
-	expectedExclude := []string{"node_modules", ".git", "__pycache__", "*.log", ".DS_Store"}
-	if len(cfg.Backup.Exclude) != len(expectedExclude) {
-		t.Errorf("Expected %d backup exclude patterns, got %d", len(expectedExclude), len(cfg.Backup.Exclude))
-	}
-
-	for i, pattern := range expectedExclude {
-		if cfg.Backup.Exclude[i] != pattern {
-			t.Errorf("Expected exclude pattern '%s' at index %d, got '%s'", pattern, i, cfg.Backup.Exclude[i])
 		}
 	}
 }
@@ -387,7 +351,7 @@ func TestGetConfigPaths(t *testing.T) {
 func TestIsFirstRun(t *testing.T) {
 	// Reset and check with non-existent config
 	ResetInitialized()
-	
+
 	// This just tests that the function doesn't panic
 	// The actual result depends on whether a config file exists
 	_ = IsFirstRun()
@@ -529,5 +493,81 @@ model:
 		if cfg.Provider.Name != "ollama" {
 			t.Errorf("Expected Provider.Name to be 'ollama' from profile, got '%s'", cfg.Provider.Name)
 		}
+	}
+}
+
+func TestToFloat(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected float64
+	}{
+		{"float64", float64(3.14), 3.14},
+		{"float32", float32(2.5), 2.5},
+		{"int", int(42), 42.0},
+		{"string", "5.5", 5.5},
+		{"invalid string", "abc", 0.0},
+		{"nil", nil, 0.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := toFloat(tt.input)
+			if result != tt.expected {
+				t.Errorf("toFloat(%v) = %f; want %f", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestToInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected int
+	}{
+		{"int", int(42), 42},
+		{"int64", int64(100), 100},
+		{"float64", float64(3.7), 3},
+		{"string", "123", 123},
+		{"invalid string", "abc", 0},
+		{"nil", nil, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := toInt(tt.input)
+			if result != tt.expected {
+				t.Errorf("toInt(%v) = %d; want %d", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestToBool(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected bool
+	}{
+		{"bool true", true, true},
+		{"bool false", false, false},
+		{"string true", "true", true},
+		{"string false", "false", false},
+		{"string 1", "1", true},
+		{"string 0", "0", false},
+		{"int 1", 1, true},
+		{"int 0", 0, false},
+		{"invalid", "maybe", false},
+		{"nil", nil, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := toBool(tt.input)
+			if result != tt.expected {
+				t.Errorf("toBool(%v) = %t; want %t", tt.input, result, tt.expected)
+			}
+		})
 	}
 }
