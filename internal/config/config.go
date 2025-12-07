@@ -38,6 +38,9 @@ type Config struct {
 	// LLM client settings
 	LLM LLMConfig `yaml:"llm" mapstructure:"llm"`
 
+	// Chat mode settings (shell sessions)
+	Chat ChatConfig `yaml:"chat" mapstructure:"chat"`
+
 	// MCP settings
 	MCP MCPConfig `yaml:"mcp" mapstructure:"mcp"`
 
@@ -113,6 +116,15 @@ type LLMConfig struct {
 	DefaultSystemPrompt string `yaml:"default_system_prompt,omitempty" mapstructure:"default_system_prompt"`
 	GenerateTitles      bool   `yaml:"generate_titles" mapstructure:"generate_titles"`
 	RetentionDays       int    `yaml:"retention_days" mapstructure:"retention_days"`
+}
+
+// ChatConfig holds chat mode (shell session) settings
+type ChatConfig struct {
+	Enabled        bool   `yaml:"enabled" mapstructure:"enabled"`
+	DBPath         string `yaml:"db_path" mapstructure:"db_path"`
+	GenerateTitles bool   `yaml:"generate_titles" mapstructure:"generate_titles"`
+	RetentionDays  int    `yaml:"retention_days" mapstructure:"retention_days"`
+	OutputMaxLines int    `yaml:"output_max_lines" mapstructure:"output_max_lines"`
 }
 
 // MCPConfig holds MCP (Model Context Protocol) settings
@@ -213,6 +225,14 @@ func DefaultConfig() *Config {
 			DefaultSystemPrompt: "",
 			GenerateTitles:      true,
 			RetentionDays:       90,
+		},
+
+		Chat: ChatConfig{
+			Enabled:        true,
+			DBPath:         filepath.Join(dataDir, "sessions.db"),
+			GenerateTitles: true,
+			RetentionDays:  90,
+			OutputMaxLines: 50,
 		},
 
 		MCP: MCPConfig{
@@ -948,36 +968,36 @@ func ResetInitialized() {
 
 // LegacyConfig represents the old flat configuration format
 type LegacyConfig struct {
-	Provider           string   `yaml:"provider"`
-	Model              string   `yaml:"model"`
-	APIEndpoint        string   `yaml:"api_endpoint"`
-	APIKey             string   `yaml:"api_key"`
-	OllamaEndpoint     string   `yaml:"ollama_endpoint"`
-	LMStudioEndpoint   string   `yaml:"lmstudio_endpoint"`
-	LlamaCppEndpoint   string   `yaml:"llamacpp_endpoint"`
-	SafetyProfile      string   `yaml:"safety_profile"`
-	AutoExecuteSafe    bool     `yaml:"auto_execute_safe"`
-	RequireConfirmation bool    `yaml:"require_confirmation"`
-	BlockedCommands    []string `yaml:"blocked_commands"`
-	AllowedPaths       []string `yaml:"allowed_paths"`
-	BackupEnabled      bool     `yaml:"backup_enabled"`
-	BackupDir          string   `yaml:"backup_dir"`
-	BackupRetentionDays int     `yaml:"backup_retention_days"`
-	BackupMaxSizeMB    int      `yaml:"backup_max_size_mb"`
-	BackupExclude      []string `yaml:"backup_exclude"`
-	HistoryEnabled     bool     `yaml:"history_enabled"`
-	HistoryDBPath      string   `yaml:"history_db_path"`
-	HistoryRetentionDays int    `yaml:"history_retention_days"`
-	MCPEnabled         bool     `yaml:"mcp_enabled"`
-	MCPServers         []string `yaml:"mcp_servers"`
-	MCPToolsDir        string   `yaml:"mcp_tools_dir"`
-	ColorEnabled       bool     `yaml:"color_enabled"`
-	ShowExplanations   bool     `yaml:"show_explanations"`
-	Language           string   `yaml:"language"`
-	TimeoutSeconds     int      `yaml:"timeout_seconds"`
-	MaxRetries         int      `yaml:"max_retries"`
-	StreamOutput       bool     `yaml:"stream_output"`
-	CustomRulesPath    string   `yaml:"custom_rules_path"`
+	Provider             string   `yaml:"provider"`
+	Model                string   `yaml:"model"`
+	APIEndpoint          string   `yaml:"api_endpoint"`
+	APIKey               string   `yaml:"api_key"`
+	OllamaEndpoint       string   `yaml:"ollama_endpoint"`
+	LMStudioEndpoint     string   `yaml:"lmstudio_endpoint"`
+	LlamaCppEndpoint     string   `yaml:"llamacpp_endpoint"`
+	SafetyProfile        string   `yaml:"safety_profile"`
+	AutoExecuteSafe      bool     `yaml:"auto_execute_safe"`
+	RequireConfirmation  bool     `yaml:"require_confirmation"`
+	BlockedCommands      []string `yaml:"blocked_commands"`
+	AllowedPaths         []string `yaml:"allowed_paths"`
+	BackupEnabled        bool     `yaml:"backup_enabled"`
+	BackupDir            string   `yaml:"backup_dir"`
+	BackupRetentionDays  int      `yaml:"backup_retention_days"`
+	BackupMaxSizeMB      int      `yaml:"backup_max_size_mb"`
+	BackupExclude        []string `yaml:"backup_exclude"`
+	HistoryEnabled       bool     `yaml:"history_enabled"`
+	HistoryDBPath        string   `yaml:"history_db_path"`
+	HistoryRetentionDays int      `yaml:"history_retention_days"`
+	MCPEnabled           bool     `yaml:"mcp_enabled"`
+	MCPServers           []string `yaml:"mcp_servers"`
+	MCPToolsDir          string   `yaml:"mcp_tools_dir"`
+	ColorEnabled         bool     `yaml:"color_enabled"`
+	ShowExplanations     bool     `yaml:"show_explanations"`
+	Language             string   `yaml:"language"`
+	TimeoutSeconds       int      `yaml:"timeout_seconds"`
+	MaxRetries           int      `yaml:"max_retries"`
+	StreamOutput         bool     `yaml:"stream_output"`
+	CustomRulesPath      string   `yaml:"custom_rules_path"`
 }
 
 // loadConfigData attempts to load config data, handling both new and legacy formats

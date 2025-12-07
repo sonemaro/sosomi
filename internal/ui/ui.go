@@ -64,7 +64,7 @@ func PrintExplanation(explanation string) {
 // PrintRiskLevel displays the risk level with appropriate styling
 func PrintRiskLevel(level types.RiskLevel, reasons []string) {
 	fmt.Println()
-	
+
 	var icon, levelStr string
 	var colorFn func(a ...interface{}) string
 
@@ -214,7 +214,7 @@ func PrintInfo(message string) {
 // PrintExecutionResult displays the result of command execution
 func PrintExecutionResult(stdout, stderr string, exitCode int, durationMs int64) {
 	fmt.Println()
-	
+
 	if stdout != "" {
 		fmt.Println(stdout)
 	}
@@ -461,4 +461,139 @@ func FormatDurationShort(d time.Duration) string {
 		return fmt.Sprintf("%dd ago", days)
 	}
 	return fmt.Sprintf("%dmo ago", days/30)
+}
+
+// SessionPicker displays an interactive session picker for shell chat mode
+// Returns the selected session, whether user chose to create new, and any error
+func SessionPicker(sessions []*types.Session, pageSize int) (*types.Session, bool, error) {
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	page := 0
+	totalPages := (len(sessions) + pageSize - 1) / pageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	for {
+		// Clear screen
+		fmt.Print("\033[2J\033[H")
+
+		// Header
+		fmt.Println()
+		fmt.Println(Magenta("  🖥️  Shell Session Picker"))
+		fmt.Println(Dim("  Select a session to continue or start a new one"))
+		fmt.Println()
+
+		// Table header
+		fmt.Println(Dim("──────────────────────────────────────────────────────────────────────────────"))
+		fmt.Printf("  %-3s %-10s %-30s %-6s %-6s %-8s %s\n",
+			Dim("#"), Dim("ID"), Dim("Name"), Dim("Cmds"), Dim("Msgs"), Dim("Tokens"), Dim("Updated"))
+		fmt.Println(Dim("──────────────────────────────────────────────────────────────────────────────"))
+
+		// Calculate page bounds
+		start := page * pageSize
+		end := start + pageSize
+		if end > len(sessions) {
+			end = len(sessions)
+		}
+
+		if len(sessions) == 0 {
+			fmt.Println(Dim("  No sessions yet. Press 'c' to create one."))
+		} else {
+			for i := start; i < end; i++ {
+				s := sessions[i]
+				num := i - start + 1
+				shortID := s.ID
+				if len(shortID) > 8 {
+					shortID = shortID[:8]
+				}
+				name := s.Name
+				if len(name) > 28 {
+					name = name[:25] + "..."
+				}
+				ago := FormatDurationShort(time.Since(s.UpdatedAt))
+				fmt.Printf("  %-3d %-10s %-30s %-6d %-6d %-8d %s\n",
+					num, Cyan(shortID), name, s.CommandCount, s.MessageCount, s.TotalTokens, Dim(ago))
+			}
+		}
+
+		fmt.Println(Dim("──────────────────────────────────────────────────────────────────────────────"))
+
+		// Pagination info
+		if totalPages > 1 {
+			fmt.Printf("  Page %d/%d  ", page+1, totalPages)
+			if page > 0 {
+				fmt.Print("[p] Prev  ")
+			}
+			if page < totalPages-1 {
+				fmt.Print("[n] Next")
+			}
+			fmt.Println()
+		}
+
+		fmt.Println()
+		fmt.Println("  [1-9] Select  [c] Create new  [s] Search  [q] Quit")
+		fmt.Println()
+		fmt.Print("  > ")
+
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, false, err
+		}
+		input = strings.TrimSpace(strings.ToLower(input))
+
+		switch {
+		case input == "q" || input == "quit":
+			return nil, false, nil
+		case input == "c" || input == "create" || input == "new":
+			return nil, true, nil
+		case input == "p" || input == "prev":
+			if page > 0 {
+				page--
+			}
+		case input == "n" || input == "next":
+			if page < totalPages-1 {
+				page++
+			}
+		case input == "s" || input == "search":
+			fmt.Print("  🔍 Search: ")
+			query, _ := reader.ReadString('\n')
+			query = strings.TrimSpace(query)
+			if query != "" {
+				filtered := FilterSessions(sessions, query)
+				if len(filtered) > 0 {
+					result, isNew, err := SessionPicker(filtered, pageSize)
+					if result != nil || isNew || err != nil {
+						return result, isNew, err
+					}
+				} else {
+					fmt.Println(Yellow("  No matches found. Press Enter to continue..."))
+					reader.ReadString('\n')
+				}
+			}
+		default:
+			// Try to parse as number
+			if num, err := strconv.Atoi(input); err == nil && num >= 1 && num <= pageSize {
+				idx := start + num - 1
+				if idx < len(sessions) {
+					return sessions[idx], false, nil
+				}
+			}
+		}
+	}
+}
+
+// FilterSessions filters sessions by name (case-insensitive)
+func FilterSessions(sessions []*types.Session, query string) []*types.Session {
+	query = strings.ToLower(query)
+	var result []*types.Session
+	for _, s := range sessions {
+		if strings.Contains(strings.ToLower(s.Name), query) {
+			result = append(result, s)
+		}
+	}
+	return result
 }

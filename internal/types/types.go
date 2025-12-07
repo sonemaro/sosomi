@@ -60,16 +60,16 @@ func (r RiskLevel) Emoji() string {
 
 // SystemContext contains information about the current system state
 type SystemContext struct {
-	OS           string   `json:"os"`
-	Shell        string   `json:"shell"`
-	CurrentDir   string   `json:"current_dir"`
-	HomeDir      string   `json:"home_dir"`
-	Username     string   `json:"username"`
-	GitBranch    string   `json:"git_branch,omitempty"`
-	GitStatus    string   `json:"git_status,omitempty"`
-	GitRemote    string   `json:"git_remote,omitempty"`
-	EnvVars      []string `json:"env_vars,omitempty"`
-	RecentCmds   []string `json:"recent_cmds,omitempty"`
+	OS               string   `json:"os"`
+	Shell            string   `json:"shell"`
+	CurrentDir       string   `json:"current_dir"`
+	HomeDir          string   `json:"home_dir"`
+	Username         string   `json:"username"`
+	GitBranch        string   `json:"git_branch,omitempty"`
+	GitStatus        string   `json:"git_status,omitempty"`
+	GitRemote        string   `json:"git_remote,omitempty"`
+	EnvVars          []string `json:"env_vars,omitempty"`
+	RecentCmds       []string `json:"recent_cmds,omitempty"`
 	InstalledPkgMgrs []string `json:"installed_pkg_mgrs,omitempty"`
 }
 
@@ -85,23 +85,23 @@ type CommandResponse struct {
 
 // CommandAnalysis contains the safety analysis of a command
 type CommandAnalysis struct {
-	Command       string        `json:"command"`
-	RiskLevel     RiskLevel     `json:"risk_level"`
-	RiskReasons   []string      `json:"risk_reasons"`
-	AffectedPaths []string      `json:"affected_paths"`
-	AffectedFiles []FileInfo    `json:"affected_files"`
-	Actions       []string      `json:"actions"`
-	Reversible    bool          `json:"reversible"`
-	RequiresSudo  bool          `json:"requires_sudo"`
+	Command       string           `json:"command"`
+	RiskLevel     RiskLevel        `json:"risk_level"`
+	RiskReasons   []string         `json:"risk_reasons"`
+	AffectedPaths []string         `json:"affected_paths"`
+	AffectedFiles []FileInfo       `json:"affected_files"`
+	Actions       []string         `json:"actions"`
+	Reversible    bool             `json:"reversible"`
+	RequiresSudo  bool             `json:"requires_sudo"`
 	Patterns      []MatchedPattern `json:"matched_patterns"`
 }
 
 // FileInfo contains information about a file that may be affected
 type FileInfo struct {
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
-	IsDir    bool   `json:"is_dir"`
-	FileCount int   `json:"file_count,omitempty"` // for directories
+	Path      string `json:"path"`
+	Size      int64  `json:"size"`
+	IsDir     bool   `json:"is_dir"`
+	FileCount int    `json:"file_count,omitempty"` // for directories
 }
 
 // MatchedPattern represents a dangerous pattern that was matched
@@ -131,15 +131,15 @@ type HistoryEntry struct {
 
 // BackupEntry represents a backup of files before command execution
 type BackupEntry struct {
-	ID          string       `json:"id"`
-	CommandID   string       `json:"command_id"`
-	Timestamp   time.Time    `json:"timestamp"`
-	Command     string       `json:"command"`
-	WorkingDir  string       `json:"working_dir"`
-	Files       []BackedUpFile `json:"files"`
-	TotalSize   int64        `json:"total_size"`
-	Restored    bool         `json:"restored"`
-	RestoredAt  *time.Time   `json:"restored_at,omitempty"`
+	ID         string         `json:"id"`
+	CommandID  string         `json:"command_id"`
+	Timestamp  time.Time      `json:"timestamp"`
+	Command    string         `json:"command"`
+	WorkingDir string         `json:"working_dir"`
+	Files      []BackedUpFile `json:"files"`
+	TotalSize  int64          `json:"total_size"`
+	Restored   bool           `json:"restored"`
+	RestoredAt *time.Time     `json:"restored_at,omitempty"`
 }
 
 // BackedUpFile represents a single backed up file
@@ -210,4 +210,44 @@ type ConversationExport struct {
 	ExportedAt   time.Time             `json:"exported_at"`
 	Conversation Conversation          `json:"conversation"`
 	Messages     []ConversationMessage `json:"messages"`
+}
+
+// Session represents a shell chat session
+type Session struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Provider     string    `json:"provider"`
+	Model        string    `json:"model"`
+	TotalTokens  int       `json:"total_tokens"`
+	MessageCount int       `json:"message_count"`
+	CommandCount int       `json:"command_count"`
+	LastCwd      string    `json:"last_cwd"`
+}
+
+// SessionMessage represents a message in a shell session
+type SessionMessage struct {
+	ID        string    `json:"id"`
+	SessionID string    `json:"session_id"`
+	Role      string    `json:"role"` // "user", "assistant", "system", "execution"
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+	Tokens    int       `json:"tokens,omitempty"`
+
+	// Execution-specific fields (when Role == "execution")
+	Command   string    `json:"command,omitempty"`
+	Output    string    `json:"output,omitempty"`
+	ExitCode  int       `json:"exit_code,omitempty"`
+	RiskLevel RiskLevel `json:"risk_level,omitempty"`
+	Duration  int64     `json:"duration_ms,omitempty"`
+	Executed  bool      `json:"executed,omitempty"`
+}
+
+// SessionExport represents a session for export/import
+type SessionExport struct {
+	Version    int              `json:"version"`
+	ExportedAt time.Time        `json:"exported_at"`
+	Session    Session          `json:"session"`
+	Messages   []SessionMessage `json:"messages"`
 }
