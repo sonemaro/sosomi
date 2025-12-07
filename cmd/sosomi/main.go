@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
 	"github.com/soroush/sosomi/internal/ai"
@@ -765,6 +766,7 @@ func runChat(sessName, continueID string) error {
 	// Load or create session
 	var sess *types.Session
 	var contextMsgs []ai.Message
+	var storedMsgs []*types.SessionMessage
 
 	if continueID != "" {
 		// Continue existing session
@@ -776,7 +778,7 @@ func runChat(sessName, continueID string) error {
 			}
 		}
 		// Load existing messages into context
-		storedMsgs, err := sessStore.GetMessages(sess.ID)
+		storedMsgs, err = sessStore.GetMessages(sess.ID)
 		if err != nil {
 			return err
 		}
@@ -801,7 +803,21 @@ func runChat(sessName, continueID string) error {
 	fmt.Println("Type /help for commands, /quit to exit")
 	fmt.Println()
 
-	reader := bufio.NewReader(os.Stdin)
+	// Setup liner for readline with history
+	line := liner.NewLiner()
+	defer line.Close()
+
+	line.SetCtrlCAborts(true)
+
+	// Load history from session messages
+	if len(storedMsgs) > 0 {
+		for _, msg := range storedMsgs {
+			if msg.Role == "user" && msg.Content != "" && !strings.HasPrefix(msg.Content, "/") {
+				line.AppendHistory(msg.Content)
+			}
+		}
+	}
+
 	isFirstExchange := sess.MessageCount == 0
 
 	// Build system prompt with shell context
@@ -813,10 +829,12 @@ func runChat(sessName, continueID string) error {
 		// Show current directory in prompt
 		currentDir, _ := os.Getwd()
 		shortDir := shortenPath(currentDir)
-		fmt.Printf("%s> ", ui.Cyan(shortDir))
+		prompt := fmt.Sprintf("%s> ", ui.Cyan(shortDir))
 
-		input, err := reader.ReadString('\n')
+		input, err := line.Prompt(prompt)
 		if err != nil {
+			// Ctrl+C or Ctrl+D
+			fmt.Println("\nGoodbye! 👋")
 			return nil
 		}
 
@@ -824,6 +842,9 @@ func runChat(sessName, continueID string) error {
 		if input == "" {
 			continue
 		}
+
+		// Add to history (liner handles duplicates)
+		line.AppendHistory(input)
 
 		// Handle special commands
 		switch {
@@ -993,9 +1014,10 @@ func runChat(sessName, continueID string) error {
 			fmt.Println(ui.Dim("[auto-executing - SAFE]"))
 			confirmed = true
 		} else {
-			// Prompt for confirmation
+			// Prompt for confirmation (use simple reader for one-off prompts)
+			confirmReader := bufio.NewReader(os.Stdin)
 			fmt.Print("[y] run  [n] cancel  [e] edit > ")
-			confirmInput, _ := reader.ReadString('\n')
+			confirmInput, _ := confirmReader.ReadString('\n')
 			confirmInput = strings.TrimSpace(strings.ToLower(confirmInput))
 
 			switch confirmInput {
@@ -1003,7 +1025,7 @@ func runChat(sessName, continueID string) error {
 				confirmed = true
 			case "e", "edit":
 				fmt.Print("  Enter modified command: ")
-				newCmd, _ := reader.ReadString('\n')
+				newCmd, _ := confirmReader.ReadString('\n')
 				newCmd = strings.TrimSpace(newCmd)
 				if newCmd != "" {
 					command = newCmd
@@ -1661,6 +1683,7 @@ func runLLM(convName, systemPrompt, continueID string) error {
 	// Load or create conversation
 	var conv *types.Conversation
 	var messages []ai.Message
+	var storedMsgs []*types.ConversationMessage
 
 	if continueID != "" {
 		// Continue existing conversation
@@ -1672,7 +1695,7 @@ func runLLM(convName, systemPrompt, continueID string) error {
 			}
 		}
 		// Load existing messages
-		storedMsgs, err := store.GetMessages(conv.ID)
+		storedMsgs, err = store.GetMessages(conv.ID)
 		if err != nil {
 			return err
 		}
@@ -1707,13 +1730,28 @@ func runLLM(convName, systemPrompt, continueID string) error {
 	fmt.Println("Type /help for commands, /quit to exit")
 	fmt.Println()
 
-	reader := bufio.NewReader(os.Stdin)
+	// Setup liner for readline with history
+	line := liner.NewLiner()
+	defer line.Close()
+
+	line.SetCtrlCAborts(true)
+
+	// Load history from conversation messages
+	if len(storedMsgs) > 0 {
+		for _, msg := range storedMsgs {
+			if msg.Role == "user" && msg.Content != "" && !strings.HasPrefix(msg.Content, "/") {
+				line.AppendHistory(msg.Content)
+			}
+		}
+	}
+
 	isFirstExchange := conv.MessageCount <= 1 // Only system prompt or empty
 
 	for {
-		fmt.Print("you> ")
-		input, err := reader.ReadString('\n')
+		input, err := line.Prompt("you> ")
 		if err != nil {
+			// Ctrl+C or Ctrl+D
+			fmt.Println("\nGoodbye! 👋")
 			return nil
 		}
 
@@ -1721,6 +1759,9 @@ func runLLM(convName, systemPrompt, continueID string) error {
 		if input == "" {
 			continue
 		}
+
+		// Add to history
+		line.AppendHistory(input)
 
 		// Handle special commands
 		switch {
@@ -1748,8 +1789,10 @@ func runLLM(convName, systemPrompt, continueID string) error {
 		case input == "/system":
 			conv, _ = store.GetConversation(conv.ID)
 			fmt.Printf("\n📋 Current system prompt:\n%s\n\n", ui.Dim(conv.SystemPrompt))
-			fmt.Print("Enter new system prompt (empty to keep current, 'clear' to remove): ")
-			newPrompt, _ := reader.ReadString('\n')
+			newPrompt, err := line.Prompt("Enter new system prompt (empty to keep, 'clear' to remove): ")
+			if err != nil {
+				continue
+			}
 			newPrompt = strings.TrimSpace(newPrompt)
 			if newPrompt == "clear" {
 				store.UpdateSystemPrompt(conv.ID, "")
