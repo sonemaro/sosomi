@@ -808,6 +808,9 @@ func runChat(sessName, continueID string) error {
 	defer line.Close()
 
 	line.SetCtrlCAborts(true)
+	
+	// Set terminal mode to support editing
+	line.SetCompleter(nil) // No tab completion for now
 
 	// Load history from session messages
 	if len(storedMsgs) > 0 {
@@ -829,13 +832,24 @@ func runChat(sessName, continueID string) error {
 		// Show current directory in prompt
 		currentDir, _ := os.Getwd()
 		shortDir := shortenPath(currentDir)
-		prompt := fmt.Sprintf("%s> ", ui.Cyan(shortDir))
+		// Don't use ANSI colors in liner prompt - liner doesn't support it
+		prompt := fmt.Sprintf("%s> ", shortDir)
 
 		input, err := line.Prompt(prompt)
 		if err != nil {
-			// Ctrl+C or Ctrl+D
-			fmt.Println("\nGoodbye! 👋")
-			return nil
+			// Check error type
+			if err == liner.ErrPromptAborted {
+				// Ctrl+C
+				fmt.Println("\nGoodbye! 👋")
+				return nil
+			}
+			// EOF or other error
+			if err.Error() == "EOF" {
+				fmt.Println("\nGoodbye! 👋")
+				return nil
+			}
+			// Unexpected error
+			return fmt.Errorf("input error: %w", err)
 		}
 
 		input = strings.TrimSpace(input)
