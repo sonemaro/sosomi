@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/soroush/sosomi/internal/ai"
-	"github.com/soroush/sosomi/internal/config"
-	"github.com/soroush/sosomi/internal/safety"
-	"github.com/soroush/sosomi/internal/shell"
-	"github.com/soroush/sosomi/internal/types"
-	"github.com/soroush/sosomi/internal/ui"
+	"github.com/sonemaro/sosomi/internal/ai"
+	"github.com/sonemaro/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/safety"
+	"github.com/sonemaro/sosomi/internal/shell"
+	"github.com/sonemaro/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/ui"
 )
 
 // processPrompt handles a single natural language prompt

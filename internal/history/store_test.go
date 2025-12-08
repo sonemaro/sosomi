@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 func TestNewStore(t *testing.T) {

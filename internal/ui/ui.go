@@ -11,7 +11,7 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 var (

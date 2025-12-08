@@ -4,7 +4,7 @@ package ai
 import (
 	"context"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // Provider defines the interface for AI providers

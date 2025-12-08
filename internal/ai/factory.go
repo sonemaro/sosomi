@@ -4,7 +4,7 @@ package ai
 import (
 	"fmt"
 
-	"github.com/soroush/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/config"
 )
 
 // NewProvider creates a new AI provider based on configuration

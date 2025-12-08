@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/soroush/sosomi/internal/ai"
-	"github.com/soroush/sosomi/internal/config"
-	"github.com/soroush/sosomi/internal/history"
+	"github.com/sonemaro/sosomi/internal/ai"
+	"github.com/sonemaro/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/history"
 )
 
 var (

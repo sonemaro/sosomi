@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // Server represents an MCP server connection

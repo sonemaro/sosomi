@@ -4,7 +4,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/soroush/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/config"
 )
 
 // initCmd returns the init subcommand

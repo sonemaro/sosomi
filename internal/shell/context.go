@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // GetSystemContext gathers information about the current system

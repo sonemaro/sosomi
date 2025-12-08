@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/soroush/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/config"
 )
 
 // configCmd returns the config subcommand

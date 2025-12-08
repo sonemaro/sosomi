@@ -4,7 +4,7 @@ package safety
 import (
 	"testing"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 func TestDangerousPatterns_Exists(t *testing.T) {

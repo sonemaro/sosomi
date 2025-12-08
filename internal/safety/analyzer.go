@@ -8,7 +8,7 @@ import (
 
 	"mvdan.cc/sh/v3/syntax"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // Analyzer performs safety analysis on shell commands

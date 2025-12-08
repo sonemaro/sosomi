@@ -4,7 +4,7 @@ package ai
 import (
 	"testing"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 func TestBuildSystemContext(t *testing.T) {

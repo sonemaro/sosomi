@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // OllamaProvider implements the Provider interface for Ollama

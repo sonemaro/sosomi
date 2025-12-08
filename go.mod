@@ -1,4 +1,4 @@
-module github.com/soroush/sosomi
+module github.com/sonemaro/sosomi
 
 go 1.24.0
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/sashabaranov/go-openai"
 
-	"github.com/soroush/sosomi/internal/config"
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // OpenAIProvider implements the Provider interface for OpenAI

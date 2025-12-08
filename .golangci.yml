@@ -26,7 +26,7 @@ linters-settings:
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/soroush/sosomi
+    local-prefixes: github.com/sonemaro/sosomi
   misspell:
     locale: US
   gocritic:

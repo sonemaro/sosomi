@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // captureOutput captures stdout during function execution

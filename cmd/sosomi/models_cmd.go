@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/soroush/sosomi/internal/ai"
+	"github.com/sonemaro/sosomi/internal/ai"
 )
 
 // modelsCmd returns the models subcommand

@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/soroush/sosomi/internal/ai"
-	"github.com/soroush/sosomi/internal/config"
-	"github.com/soroush/sosomi/internal/ui"
+	"github.com/sonemaro/sosomi/internal/ai"
+	"github.com/sonemaro/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/ui"
 )
 
 // askCmd returns the intelligent help command

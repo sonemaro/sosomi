@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/soroush/sosomi/internal/config"
+	"github.com/sonemaro/sosomi/internal/config"
 )
 
 func TestAvailableProviders(t *testing.T) {

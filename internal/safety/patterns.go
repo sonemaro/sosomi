@@ -4,7 +4,7 @@ package safety
 import (
 	"regexp"
 
-	"github.com/soroush/sosomi/internal/types"
+	"github.com/sonemaro/sosomi/internal/types"
 )
 
 // DangerPattern represents a dangerous command pattern
