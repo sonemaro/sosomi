@@ -39,13 +39,13 @@ type Provider interface {
 
 // RefineRequest contains the context for refining a command
 type RefineRequest struct {
-	OriginalPrompt  string // The original user request
-	GeneratedCmd    string // The command that was generated
-	Feedback        string // User's feedback on what was wrong
-	CommandOutput   string // Output from running the command (if any)
-	CommandError    string // Error from running the command (if any)
-	ExitCode        int    // Exit code if command was run
-	WasExecuted     bool   // Whether the command was actually run
+	OriginalPrompt string // The original user request
+	GeneratedCmd   string // The command that was generated
+	Feedback       string // User's feedback on what was wrong
+	CommandOutput  string // Output from running the command (if any)
+	CommandError   string // Error from running the command (if any)
+	ExitCode       int    // Exit code if command was run
+	WasExecuted    bool   // Whether the command was actually run
 }
 
 // Message represents a chat message

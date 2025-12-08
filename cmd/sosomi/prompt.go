@@ -128,7 +128,7 @@ func interactiveConfirm(response *types.CommandResponse, analysis *types.Command
 		case "y", "yes":
 			return executeCommand(response.Command, prompt, analysis)
 		case "n", "no", "":
-			ui.PrintInfo("Command cancelled")
+			ui.PrintInfo("Command canceled")
 			return nil
 		case "d", "dry-run":
 			return executeDryRun(response.Command, analysis)

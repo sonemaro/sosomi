@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
+
 	"github.com/soroush/sosomi/internal/types"
 )
 
@@ -118,7 +119,7 @@ func (p *LocalOpenAIProvider) RefineCommand(ctx context.Context, req RefineReque
 	var userMessage strings.Builder
 	userMessage.WriteString("ORIGINAL REQUEST: " + req.OriginalPrompt + "\n\n")
 	userMessage.WriteString("GENERATED COMMAND: " + req.GeneratedCmd + "\n\n")
-	
+
 	if req.WasExecuted {
 		userMessage.WriteString("COMMAND WAS EXECUTED\n")
 		userMessage.WriteString(fmt.Sprintf("EXIT CODE: %d\n", req.ExitCode))
@@ -133,7 +134,7 @@ func (p *LocalOpenAIProvider) RefineCommand(ctx context.Context, req RefineReque
 			userMessage.WriteString("ERROR:\n" + req.CommandError + "\n\n")
 		}
 	}
-	
+
 	userMessage.WriteString("PROBLEM: " + req.Feedback + "\n\n")
 	userMessage.WriteString("Please provide a corrected command.")
 
@@ -383,7 +384,7 @@ RULES:
 // parseLocalModelResponse parses the simpler response format from local models
 func parseLocalModelResponse(content string) (*types.CommandResponse, error) {
 	content = strings.TrimSpace(content)
-	
+
 	resp := &types.CommandResponse{
 		Confidence: 0.8,
 		RiskLevel:  types.RiskSafe,
@@ -392,7 +393,7 @@ func parseLocalModelResponse(content string) (*types.CommandResponse, error) {
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.HasPrefix(line, "WARNING:") {
 			resp.Warnings = append(resp.Warnings, strings.TrimPrefix(line, "WARNING:"))
 			resp.RiskLevel = types.RiskCaution

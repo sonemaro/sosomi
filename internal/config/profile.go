@@ -19,10 +19,10 @@ type Profile struct {
 	Description string `yaml:"description,omitempty"`
 
 	// Embedded config fields (not full config, just overrides)
-	Provider ProviderConfig `yaml:"provider,omitempty"`
-	Model    ModelConfig    `yaml:"model,omitempty"`
-	Safety   SafetyConfig   `yaml:"safety,omitempty"`
-	UI       UIConfig       `yaml:"ui,omitempty"`
+	Provider ProviderConfig    `yaml:"provider,omitempty"`
+	Model    ModelConfig       `yaml:"model,omitempty"`
+	Safety   SafetyConfig      `yaml:"safety,omitempty"`
+	UI       UIConfig          `yaml:"ui,omitempty"`
 	Aliases  map[string]string `yaml:"aliases,omitempty"`
 }
 
@@ -89,7 +89,7 @@ func SaveProfile(profile *Profile) error {
 func DeleteProfile(name string) error {
 	paths := GetConfigPaths()
 	profilePath := filepath.Join(paths.ProfileDir, name+".yaml")
-	
+
 	// Check if this is the default profile
 	if GetBase().DefaultProfile == name {
 		GetBase().DefaultProfile = ""
@@ -97,7 +97,7 @@ func DeleteProfile(name string) error {
 			return fmt.Errorf("failed to clear default profile: %w", err)
 		}
 	}
-	
+
 	return os.Remove(profilePath)
 }
 
@@ -109,7 +109,7 @@ func SetDefaultProfile(name string) error {
 			return fmt.Errorf("profile '%s' not found", name)
 		}
 	}
-	
+
 	GetBase().DefaultProfile = name
 	return Save()
 }

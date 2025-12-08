@@ -580,7 +580,7 @@ func runChat(sessName, continueID string) error {
 			// Prompt for confirmation using liner
 			confirmInput, err := line.Prompt("[y] run  [n] cancel  [e] edit > ")
 			if err != nil {
-				fmt.Println(ui.Dim("Cancelled"))
+				fmt.Println(ui.Dim("Canceled"))
 				sessStore.AddExecutionMessage(sess.ID, input, command, "", 0, analysis.RiskLevel, 0, false, userTokens+assistantTokens)
 				continue
 			}
@@ -601,7 +601,7 @@ func runChat(sessName, continueID string) error {
 					confirmed = true
 				}
 			default:
-				fmt.Println(ui.Dim("Cancelled"))
+				fmt.Println(ui.Dim("Canceled"))
 				sessStore.AddExecutionMessage(sess.ID, input, command, "", 0, analysis.RiskLevel, 0, false, userTokens+assistantTokens)
 				continue
 			}
@@ -807,7 +807,7 @@ func printSessionHistory(msgs []*types.SessionMessage, limit int) {
 			if msg.Executed {
 				fmt.Printf("%s %s\n", status, ui.Cyan(msg.Command))
 			} else {
-				fmt.Printf("%s %s %s\n", ui.Dim("⏸"), msg.Command, ui.Dim("(cancelled)"))
+				fmt.Printf("%s %s %s\n", ui.Dim("⏸"), msg.Command, ui.Dim("(canceled)"))
 			}
 		}
 	}
@@ -876,36 +876,4 @@ func printChatHelp() {
 
 Just type your request in natural language to generate and run commands.
 The AI sees command outputs and can help troubleshoot errors.`)
-}
-
-func showRecentHistory() {
-	if historyStore == nil {
-		ui.PrintWarning("History is not enabled")
-		return
-	}
-
-	entries, err := historyStore.ListCommands(10, 0, "")
-	if err != nil {
-		ui.PrintError(fmt.Sprintf("Failed to get history: %v", err))
-		return
-	}
-
-	if len(entries) == 0 {
-		ui.PrintInfo("No history entries")
-		return
-	}
-
-	fmt.Println("\nRecent commands:")
-	for _, entry := range entries {
-		status := "⏸"
-		if entry.Executed {
-			if entry.ExitCode == 0 {
-				status = "✓"
-			} else {
-				status = "✗"
-			}
-		}
-		fmt.Printf("  %s %s: %s\n", status, entry.Timestamp.Format("15:04"), entry.GeneratedCmd)
-	}
-	fmt.Println()
 }

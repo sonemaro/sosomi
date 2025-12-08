@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/soroush/sosomi/internal/types"
 )
 
@@ -74,9 +74,8 @@ func (s *Store) initialize() error {
 
 	// Migration: Add auto_execute column if it doesn't exist
 	_, err := s.db.Exec(`ALTER TABLE sessions ADD COLUMN auto_execute INTEGER DEFAULT 0`)
-	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
-		// Ignore error if column already exists, but log others
-	}
+	// Ignore error if column already exists (migration already applied)
+	_ = err
 
 	return nil
 }
@@ -303,12 +302,12 @@ func (s *Store) UpdateAutoExecute(sessionID string, autoExecute bool) error {
 // DeleteSession deletes a session and all its messages
 func (s *Store) DeleteSession(id string) error {
 	// First try by ID
-	result, err := s.db.Exec(`DELETE FROM session_messages WHERE session_id = ?`, id)
+	_, err := s.db.Exec(`DELETE FROM session_messages WHERE session_id = ?`, id)
 	if err != nil {
 		return err
 	}
 
-	result, err = s.db.Exec(`DELETE FROM sessions WHERE id = ?`, id)
+	result, err := s.db.Exec(`DELETE FROM sessions WHERE id = ?`, id)
 	if err != nil {
 		return err
 	}

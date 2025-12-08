@@ -44,9 +44,9 @@ type RPCError struct {
 
 // InitializeParams are sent when initializing an MCP server
 type InitializeParams struct {
-	ProtocolVersion string     `json:"protocolVersion"`
+	ProtocolVersion string       `json:"protocolVersion"`
 	Capabilities    Capabilities `json:"capabilities"`
-	ClientInfo      ClientInfo `json:"clientInfo"`
+	ClientInfo      ClientInfo   `json:"clientInfo"`
 }
 
 // Capabilities describes client capabilities
@@ -122,7 +122,7 @@ func (m *Manager) StartServer(ctx context.Context, name string, command string, 
 	}
 
 	cmd := exec.CommandContext(ctx, command, args...)
-	
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdin pipe: %w", err)
@@ -462,7 +462,7 @@ func ExecuteBuiltinTool(name string, arguments map[string]interface{}) (*types.M
 		if !ok {
 			return &types.MCPToolResult{Content: "command argument required", IsError: true}, nil
 		}
-		
+
 		workdir, _ := arguments["workdir"].(string)
 		if workdir == "" {
 			workdir, _ = os.Getwd()

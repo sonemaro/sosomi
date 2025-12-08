@@ -260,9 +260,9 @@ func TestAnalyze_CommandWithRedirect(t *testing.T) {
 	analyzer := NewAnalyzer(nil, nil)
 
 	tests := []struct {
-		name     string
-		command  string
-		minRisk  types.RiskLevel
+		name    string
+		command string
+		minRisk types.RiskLevel
 	}{
 		{"safe redirect", "echo hello > /tmp/test.txt", types.RiskSafe},
 		{"etc redirect", "echo config > /etc/test.conf", types.RiskDangerous},

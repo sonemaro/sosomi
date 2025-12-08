@@ -6,24 +6,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/soroush/sosomi/internal/types"
 	"mvdan.cc/sh/v3/syntax"
+
+	"github.com/soroush/sosomi/internal/types"
 )
 
 // Analyzer performs safety analysis on shell commands
 type Analyzer struct {
-	parser      *syntax.Parser
-	customRules []CustomRule
-	blockedCmds []string
+	parser       *syntax.Parser
+	blockedCmds  []string
 	allowedPaths []string
 }
 
 // CustomRule represents a user-defined safety rule
 type CustomRule struct {
-	Pattern     string          `yaml:"pattern"`
-	Action      string          `yaml:"action"` // warn, block, confirm
-	Message     string          `yaml:"message"`
-	RiskLevel   types.RiskLevel `yaml:"risk_level"`
+	Pattern   string          `yaml:"pattern"`
+	Action    string          `yaml:"action"` // warn, block, confirm
+	Message   string          `yaml:"message"`
+	RiskLevel types.RiskLevel `yaml:"risk_level"`
 }
 
 // NewAnalyzer creates a new command analyzer
@@ -117,7 +117,7 @@ func (a *Analyzer) analyzeCallExpr(call *syntax.CallExpr, analysis *types.Comman
 func (a *Analyzer) analyzeRm(call *syntax.CallExpr, analysis *types.CommandAnalysis) {
 	hasRecursive := false
 	hasForce := false
-	
+
 	for _, arg := range call.Args[1:] {
 		lit := a.getLiteral(arg)
 		if lit == "" {
@@ -137,7 +137,7 @@ func (a *Analyzer) analyzeRm(call *syntax.CallExpr, analysis *types.CommandAnaly
 
 		// Track affected paths
 		analysis.AffectedPaths = append(analysis.AffectedPaths, lit)
-		
+
 		// Check for dangerous paths
 		if lit == "/" || lit == "~" || lit == "$HOME" {
 			analysis.RiskLevel = types.RiskCritical
@@ -170,7 +170,7 @@ func (a *Analyzer) analyzeMv(call *syntax.CallExpr, analysis *types.CommandAnaly
 		}
 		analysis.AffectedPaths = append(analysis.AffectedPaths, lit)
 	}
-	
+
 	analysis.Actions = append(analysis.Actions, "MOVE/RENAME files")
 	if analysis.RiskLevel < types.RiskCaution {
 		analysis.RiskLevel = types.RiskCaution
@@ -186,14 +186,14 @@ func (a *Analyzer) analyzeCp(call *syntax.CallExpr, analysis *types.CommandAnaly
 		}
 		analysis.AffectedPaths = append(analysis.AffectedPaths, lit)
 	}
-	
+
 	analysis.Actions = append(analysis.Actions, "COPY files")
 }
 
 // analyzeChmod analyzes chmod commands
 func (a *Analyzer) analyzeChmod(call *syntax.CallExpr, analysis *types.CommandAnalysis) {
 	hasRecursive := false
-	
+
 	for _, arg := range call.Args[1:] {
 		lit := a.getLiteral(arg)
 		if lit == "" {
@@ -212,7 +212,7 @@ func (a *Analyzer) analyzeChmod(call *syntax.CallExpr, analysis *types.CommandAn
 			analysis.RiskLevel = types.RiskDangerous
 			analysis.RiskReasons = append(analysis.RiskReasons, "World-writable permissions are a security risk")
 		}
-		
+
 		analysis.AffectedPaths = append(analysis.AffectedPaths, lit)
 	}
 
@@ -229,7 +229,7 @@ func (a *Analyzer) analyzeChmod(call *syntax.CallExpr, analysis *types.CommandAn
 // analyzeChown analyzes chown commands
 func (a *Analyzer) analyzeChown(call *syntax.CallExpr, analysis *types.CommandAnalysis) {
 	hasRecursive := false
-	
+
 	for _, arg := range call.Args[1:] {
 		lit := a.getLiteral(arg)
 		if lit == "" {
@@ -242,7 +242,7 @@ func (a *Analyzer) analyzeChown(call *syntax.CallExpr, analysis *types.CommandAn
 			}
 			continue
 		}
-		
+
 		analysis.AffectedPaths = append(analysis.AffectedPaths, lit)
 	}
 
@@ -260,7 +260,7 @@ func (a *Analyzer) analyzeRedirect(redir *syntax.Redirect, analysis *types.Comma
 		path := a.getLiteralWord(redir.Word)
 		if path != "" {
 			analysis.AffectedPaths = append(analysis.AffectedPaths, path)
-			
+
 			// Check if overwriting
 			if redir.Op == syntax.RdrOut || redir.Op == syntax.RdrAll {
 				if analysis.RiskLevel < types.RiskCaution {
@@ -294,7 +294,7 @@ func (a *Analyzer) patternAnalysis(command string, analysis *types.CommandAnalys
 				RiskLevel:   pattern.RiskLevel,
 			})
 			analysis.RiskReasons = append(analysis.RiskReasons, pattern.Description)
-			
+
 			if pattern.RiskLevel >= types.RiskDangerous {
 				analysis.Reversible = false
 			}
@@ -325,20 +325,20 @@ func (a *Analyzer) checkPathRestrictions(analysis *types.CommandAnalysis) {
 			home, _ := os.UserHomeDir()
 			path = filepath.Join(home, path[1:])
 		}
-		
+
 		allowed := false
 		for _, allowedPath := range a.allowedPaths {
 			if strings.HasPrefix(allowedPath, "~") {
 				home, _ := os.UserHomeDir()
 				allowedPath = filepath.Join(home, allowedPath[1:])
 			}
-			
+
 			if strings.HasPrefix(path, allowedPath) {
 				allowed = true
 				break
 			}
 		}
-		
+
 		if !allowed {
 			if analysis.RiskLevel < types.RiskCaution {
 				analysis.RiskLevel = types.RiskCaution
@@ -358,7 +358,7 @@ func (a *Analyzer) getLiteralWord(word *syntax.Word) string {
 	if word == nil || len(word.Parts) == 0 {
 		return ""
 	}
-	
+
 	var result strings.Builder
 	for _, part := range word.Parts {
 		if lit, ok := part.(*syntax.Lit); ok {
@@ -371,27 +371,27 @@ func (a *Analyzer) getLiteralWord(word *syntax.Word) string {
 // GetAffectedFiles expands paths and returns file information
 func (a *Analyzer) GetAffectedFiles(analysis *types.CommandAnalysis) ([]types.FileInfo, error) {
 	var files []types.FileInfo
-	
+
 	for _, path := range analysis.AffectedPaths {
 		// Expand home directory
 		if strings.HasPrefix(path, "~") {
 			home, _ := os.UserHomeDir()
 			path = filepath.Join(home, path[1:])
 		}
-		
+
 		// Check if path exists
 		info, err := os.Stat(path)
 		if err != nil {
 			// Path doesn't exist or error accessing
 			continue
 		}
-		
+
 		fileInfo := types.FileInfo{
 			Path:  path,
 			Size:  info.Size(),
 			IsDir: info.IsDir(),
 		}
-		
+
 		// Count files in directory
 		if info.IsDir() {
 			count := 0
@@ -403,9 +403,9 @@ func (a *Analyzer) GetAffectedFiles(analysis *types.CommandAnalysis) ([]types.Fi
 			})
 			fileInfo.FileCount = count
 		}
-		
+
 		files = append(files, fileInfo)
 	}
-	
+
 	return files, nil
 }

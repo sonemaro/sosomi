@@ -133,9 +133,9 @@ func TestGetConversationByName(t *testing.T) {
 	store.CreateConversation("JavaScript Tutorial", "", "openai", "gpt-4o")
 
 	tests := []struct {
-		searchName   string
-		expectName   string
-		expectError  bool
+		searchName  string
+		expectName  string
+		expectError bool
 	}{
 		{"Python", "Python Help", false},
 		{"Go", "Go Development", false},

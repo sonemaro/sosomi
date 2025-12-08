@@ -363,8 +363,8 @@ func TestParseRiskLevel(t *testing.T) {
 		{"CAUTION", types.RiskCaution},
 		{"DANGEROUS", types.RiskDangerous},
 		{"CRITICAL", types.RiskCritical},
-		{"unknown", types.RiskCaution},  // Default to caution
-		{"", types.RiskCaution},         // Default to caution
+		{"unknown", types.RiskCaution}, // Default to caution
+		{"", types.RiskCaution},        // Default to caution
 	}
 
 	for _, tt := range tests {

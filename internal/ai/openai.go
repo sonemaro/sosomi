@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
+
 	"github.com/soroush/sosomi/internal/config"
 	"github.com/soroush/sosomi/internal/types"
 )
@@ -80,7 +81,7 @@ func (p *OpenAIProvider) RefineCommand(ctx context.Context, req RefineRequest, s
 	var userMessage strings.Builder
 	userMessage.WriteString("ORIGINAL REQUEST: " + req.OriginalPrompt + "\n\n")
 	userMessage.WriteString("GENERATED COMMAND: " + req.GeneratedCmd + "\n\n")
-	
+
 	if req.WasExecuted {
 		userMessage.WriteString("COMMAND WAS EXECUTED\n")
 		userMessage.WriteString(fmt.Sprintf("EXIT CODE: %d\n", req.ExitCode))
@@ -98,7 +99,7 @@ func (p *OpenAIProvider) RefineCommand(ctx context.Context, req RefineRequest, s
 	} else {
 		userMessage.WriteString("COMMAND WAS NOT EXECUTED\n\n")
 	}
-	
+
 	userMessage.WriteString("USER FEEDBACK: " + req.Feedback)
 
 	resp, err := p.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
@@ -305,7 +306,7 @@ func (p *OpenAIProvider) CallTool(ctx context.Context, tool types.MCPToolCall) (
 func parseCommandResponse(content string) (*types.CommandResponse, error) {
 	// Try to extract JSON from the response
 	content = strings.TrimSpace(content)
-	
+
 	// Handle markdown code blocks
 	if strings.HasPrefix(content, "```json") {
 		content = strings.TrimPrefix(content, "```json")

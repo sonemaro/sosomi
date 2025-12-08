@@ -141,7 +141,7 @@ func profileCmd() *cobra.Command {
 			input = strings.TrimSpace(strings.ToLower(input))
 
 			if input != "y" && input != "yes" {
-				ui.PrintInfo("Cancelled")
+				ui.PrintInfo("Canceled")
 				return nil
 			}
 

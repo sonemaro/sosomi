@@ -139,7 +139,7 @@ func (p *OllamaProvider) RefineCommand(ctx context.Context, req RefineRequest, s
 	var userMessage strings.Builder
 	userMessage.WriteString("ORIGINAL REQUEST: " + req.OriginalPrompt + "\n\n")
 	userMessage.WriteString("GENERATED COMMAND: " + req.GeneratedCmd + "\n\n")
-	
+
 	if req.WasExecuted {
 		userMessage.WriteString("COMMAND WAS EXECUTED\n")
 		userMessage.WriteString(fmt.Sprintf("EXIT CODE: %d\n", req.ExitCode))
@@ -154,7 +154,7 @@ func (p *OllamaProvider) RefineCommand(ctx context.Context, req RefineRequest, s
 			userMessage.WriteString("ERROR OUTPUT:\n" + req.CommandError + "\n\n")
 		}
 	}
-	
+
 	userMessage.WriteString("USER FEEDBACK: " + req.Feedback)
 
 	reqBody := OllamaChatRequest{
@@ -291,10 +291,7 @@ func (p *OllamaProvider) Chat(ctx context.Context, messages []Message) (string, 
 func (p *OllamaProvider) ChatWithUsage(ctx context.Context, messages []Message) (*ChatResponse, error) {
 	ollamaMessages := make([]OllamaMessage, len(messages))
 	for i, msg := range messages {
-		ollamaMessages[i] = OllamaMessage{
-			Role:    msg.Role,
-			Content: msg.Content,
-		}
+		ollamaMessages[i] = OllamaMessage(msg)
 	}
 
 	reqBody := OllamaChatRequest{
@@ -347,10 +344,7 @@ func (p *OllamaProvider) ChatWithUsage(ctx context.Context, messages []Message) 
 func (p *OllamaProvider) ChatStream(ctx context.Context, messages []Message) (<-chan StreamChunk, error) {
 	ollamaMessages := make([]OllamaMessage, len(messages))
 	for i, msg := range messages {
-		ollamaMessages[i] = OllamaMessage{
-			Role:    msg.Role,
-			Content: msg.Content,
-		}
+		ollamaMessages[i] = OllamaMessage(msg)
 	}
 
 	reqBody := OllamaChatRequest{

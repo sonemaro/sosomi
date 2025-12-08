@@ -85,7 +85,7 @@ func RunWizard() (*WizardResult, error) {
 
 	// Save profile option
 	result := &WizardResult{Config: cfg, Success: true}
-	
+
 	fmt.Println()
 	fmt.Print("Save this configuration as a profile? (y/n) [n]: ")
 	saveProfile, _ := reader.ReadString('\n')
@@ -137,7 +137,7 @@ func configureOpenAI(reader *bufio.Reader, cfg *Config) error {
 	fmt.Println()
 	fmt.Println("OpenAI requires an API key from https://platform.openai.com")
 	fmt.Println()
-	
+
 	// Check if key already exists
 	if key := os.Getenv("OPENAI_API_KEY"); key != "" {
 		fmt.Println("✓ Found OPENAI_API_KEY environment variable")
