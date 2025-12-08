@@ -28,7 +28,7 @@ Examples:
   sosomi "delete all .tmp files" --dry-run
   sosomi chat`,
 		Args:    cobra.ArbitraryArgs,
-		Version: fmt.Sprintf("%s (commit: %s)", version, commit),
+		Version: fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return initializeApp()
 		},

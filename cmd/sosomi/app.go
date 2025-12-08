@@ -12,8 +12,9 @@ import (
 
 var (
 	// Version info - set during build via ldflags
-	version = "0.1.0"
-	commit  = "dev"
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 
 	// Command flags
 	autoExecute bool

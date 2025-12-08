@@ -1,0 +1,75 @@
+# Release workflow - triggered on version tags
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest  # Use macOS for CGO + universal binary support
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: true
+
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  # Build for Linux separately (needs different runner for CGO)
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache: true
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build Linux amd64
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+            -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v} -X main.commit=${GITHUB_SHA::7}" \
+            -o dist/sosomi_linux_amd64 \
+            ./cmd/sosomi
+
+      - name: Create Linux archive
+        run: |
+          cd dist
+          tar -czvf sosomi_${GITHUB_REF_NAME#v}_linux_amd64.tar.gz sosomi_linux_amd64 ../README.md ../config.example.yaml
+
+      - name: Upload Linux release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/sosomi_*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

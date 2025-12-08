@@ -1,0 +1,126 @@
+# GoReleaser configuration for sosomi
+# Documentation: https://goreleaser.com
+
+version: 2
+
+project_name: sosomi
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: sosomi
+    main: ./cmd/sosomi
+    binary: sosomi
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    # CGO is needed for sqlite3, so we need to handle cross-compilation
+    ignore:
+      # Skip cross-compilation for now (CGO makes it complex)
+      - goos: linux
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# macOS universal binary (combines amd64 + arm64)
+universal_binaries:
+  - id: sosomi
+    replace: true
+    name_template: sosomi
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+    files:
+      - README.md
+      - LICENSE*
+      - config.example.yaml
+      - scripts/*
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: "🚀 Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "🐛 Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "📦 Refactoring"
+      regexp: '^.*?refactor(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "🔧 Other"
+      order: 999
+
+release:
+  github:
+    owner: sonemaro
+    name: sosomi
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Sosomi {{ .Version }}
+    
+    Safe AI Shell Assistant - converts natural language to shell commands with safety features.
+    
+    ### Installation
+    
+    **Homebrew (macOS/Linux):**
+    ```bash
+    brew install sonemaro/tap/sosomi
+    ```
+    
+    **Manual:**
+    Download the appropriate archive for your platform below.
+  footer: |
+    ---
+    
+    **Full Changelog**: https://github.com/sonemaro/sosomi/compare/{{ .PreviousTag }}...{{ .Tag }}
+  name_template: "v{{ .Version }}"
+
+# Homebrew cask (replaces deprecated brews)
+homebrew_casks:
+  - name: sosomi
+    repository:
+      owner: sonemaro
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/sonemaro/sosomi"
+    description: "Safe AI Shell Assistant - converts natural language to shell commands"
+    license: "MIT"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Cask update for {{ .ProjectName }} version {{ .Tag }}"

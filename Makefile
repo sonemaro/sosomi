@@ -1,11 +1,12 @@
 # Sosomi Makefile
 
 BINARY_NAME=sosomi
-VERSION=0.1.0
-COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "dev")
-LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT)"
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
-.PHONY: all build install clean test lint run help
+.PHONY: all build install clean test lint run help release-dry-run release-snapshot
 
 all: build
 
@@ -91,3 +92,11 @@ help:
 	@echo "  make build          # Build the binary"
 	@echo "  make install        # Install to ~/.local/bin"
 	@echo "  make run ARGS='\"list files\"'  # Run with arguments"
+
+## Test GoReleaser locally (dry run)
+release-dry-run:
+	goreleaser release --snapshot --clean --skip=publish
+
+## Create a snapshot release (for testing)
+release-snapshot:
+	goreleaser release --snapshot --clean
